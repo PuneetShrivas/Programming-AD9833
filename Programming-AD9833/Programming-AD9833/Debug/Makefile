@@ -107,7 +107,7 @@ all: $(OUTPUT_FILE_PATH) $(ADDITIONAL_DEPENDENCIES)
 $(OUTPUT_FILE_PATH): $(OBJS) $(USER_OBJS) $(OUTPUT_FILE_DEP) $(LIB_DEP) $(LINKER_SCRIPT_DEP)
 	@echo Building target: $@
 	@echo Invoking: AVR8/GNU Linker : 4.3.3
-	$(QUOTE)C:\WinAVR-20100110\bin\avr-g++.exe$(QUOTE) -o$(OUTPUT_FILE_PATH_AS_ARGS) $(OBJS_AS_ARGS) $(USER_OBJS) $(LIBS) -Wl,-Map="Programming-AD9833.map" -Wl,--start-group -Wl,-lm -Wl,-lAD9833.h -Wl,-lAD9833.c  -Wl,--end-group -Wl,-L"C:\Users\Puneet Shrivas\Desktop\Advitiy\AD9833"  -Wl,--gc-sections  -mmcu=atmega32   
+	$(QUOTE)C:\WinAVR-20100110\bin\avr-g++.exe$(QUOTE) -o$(OUTPUT_FILE_PATH_AS_ARGS) $(OBJS_AS_ARGS) $(USER_OBJS) $(LIBS) -Wl,-Map="Programming-AD9833.map" -Wl,--start-group -Wl,-lm  -Wl,--end-group -Wl,-L"C:\Users\Puneet Shrivas\Desktop\Advitiy\AD9833"  -Wl,--gc-sections  -mmcu=atmega32   
 	@echo Finished building target: $@
 	"C:\WinAVR-20100110\bin\avr-objcopy.exe" -O ihex -R .eeprom -R .fuse -R .lock -R .signature -R .user_signatures  "Programming-AD9833.elf" "Programming-AD9833.hex"
 	"C:\WinAVR-20100110\bin\avr-objcopy.exe" -j .eeprom  --set-section-flags=.eeprom=alloc,load --change-section-lma .eeprom=0  --no-change-warnings -O ihex "Programming-AD9833.elf" "Programming-AD9833.eep" || exit 0
