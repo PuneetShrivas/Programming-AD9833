@@ -33,10 +33,10 @@ void UART_init(void)
 }
 
 void UART_send(uint8_t data)
-	 {
-		 while(!(UCSRA & (1<<UDRE)));
-		 UDR=data;
-	 }
+ {
+	 while(!(UCSRA & (1<<UDRE)));
+	 UDR=data;
+ }
 
 void led(int i)
 {
@@ -56,12 +56,10 @@ void led(int i)
 
 void SPI_transfer(uint8_t data)
 {
-	
 	PORTB|=(1<<PINB4);							//set SS pin high every time 
 	UART_send(data);							//check data sent to AD
 	SPDR=data;
 	while(!(SPSR&(1<<SPIF))) {;/*wait for data transfer and recieving*/} //Error is possible here
-	
 }
 
 void SPI_write16 (unsigned short data)    			//send a 16bit word and use fsync
@@ -69,14 +67,13 @@ void SPI_write16 (unsigned short data)    			//send a 16bit word and use fsync
 	unsigned char MSdata = ((data>>8) & 0x00FF);  	//filter out MS
 	unsigned char LSdata = (data & 0x00FF);			//filter out LS
 	PORTB &= ~(1<<PINB0);						    //Fsync Low --> begin frame
-	SPI_transfer(MSdata);
+	SPI_transfer(MSdata);							
 	SPI_transfer(LSdata);
 	PORTB |= (1<<PINB0);						    //Fsync High --> End of frame
 }
 
-void Set_AD9833(float frequency)
+void Set_AD9833(float frequency,int mode)
 {
-	//TODO : implement mode format
 	long FreqReg = (frequency*pow(2,28))/(float)Fmclk;  //Calculate frequency to be sent to AD9833
 	int MSB = (int)((FreqReg &  0xFFFC000) >> 14);		  //Extract first 14 bits of FreqReg and place them at last 14 bits of MSB
 	int LSB = (int)((FreqReg & 0x3FFF));				  //Extract last 14 bits of FreqReg and place them at last 14 bits of MSB	
@@ -86,24 +83,24 @@ void Set_AD9833(float frequency)
 	SPI_write16(LSB);									  //Write LSBs
 	SPI_write16(MSB);									  //Write MSBs
 	SPI_write16(0xC000);								  //Mode selection for writing to phase register bit, selection of PHASE0 register (Needs to be fixed)
-	SPI_write16(0x2000);
+	switch(mode)
+	{
+		case 0 : SPI_write16(SINE); break;				  //Mode select Sine
+		case 1 : SPI_write16(SQUARE); break;			  //Mode select square
+		case 2 : SPI_write16(TRIANGLE); break;			  //Mode select triangle
+	}	
 }
 
 int main(void)
 {
 	UART_init();
-	UART_send('o');
 	SPI_init();
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);
 	PORTA=0;
 	SPI_write16(0x100);							//Reset AD9833 
-	/*Set_AD9833(4000);*/
+	Set_AD9833(4000,0);
 	while (1) 
-    {
-		Set_AD9833(3000);
-		_delay_ms(1000);
-		Set_AD9833(6000);
-		_delay_ms(1000);				
+    {				
     }
 }
 
