@@ -15,7 +15,7 @@
     <AssemblyName>Programming-AD9833</AssemblyName>
     <Name>Programming-AD9833</Name>
     <RootNamespace>Programming-AD9833</RootNamespace>
-    <ToolchainFlavour>WinAVRDev</ToolchainFlavour>
+    <ToolchainFlavour>Native</ToolchainFlavour>
     <KeepTimersRunning>true</KeepTimersRunning>
     <OverrideVtor>false</OverrideVtor>
     <CacheFlash>true</CacheFlash>

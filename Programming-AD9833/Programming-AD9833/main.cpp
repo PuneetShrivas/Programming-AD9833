@@ -5,17 +5,21 @@
  * Author : Puneet Shrivas
  */ 
 
-#define F_CPU 14745600
-#define Fmclk 25000000
+#define F_CPU 14745600			 
+#define Fmclk 25000000			  //crystal frequency on AD development board
 #define SINE 0x2100               //mode 0
 #define SQUARE 0x2128			  //mode 1
 #define TRIANGLE 0x2102			  //mode 2
-#define BAUDRATE 9600 //Baud rate for UART
-#define BAUD_PRESCALLER (((F_CPU / (BAUDRATE * 16UL))) - 1) //Predefined formula from data sheet
+#define BAUDRATE 9600			  //Baud rate for UART
+#define BAUD_PRESCALLER (((F_CPU/(BAUDRATE * 16UL))) - 1) //Predefined formula from data sheet
 
 #include <avr/io.h>
 #include <avr/delay.h>
 #include <math.h>
+#include <avr/interrupt.h>
+
+float gen_freq; 
+int i=0;
 
 void SPI_init(void)
 {
@@ -57,19 +61,19 @@ void led(int i)
 void SPI_transfer(uint8_t data)
 {
 	PORTB|=(1<<PINB4);							//set SS pin high every time 
-	UART_send(data);							//check data sent to AD
+	//UART_send(data);							//check data sent to AD
 	SPDR=data;
 	while(!(SPSR&(1<<SPIF))) {;/*wait for data transfer and recieving*/} //Error is possible here
 }
 
-void SPI_write16 (unsigned short data)    			//send a 16bit word and use fsync
+void SPI_write16 (unsigned short data)    			//send a 16bit word and use f sync
 {  
 	unsigned char MSdata = ((data>>8) & 0x00FF);  	//filter out MS
 	unsigned char LSdata = (data & 0x00FF);			//filter out LS
-	PORTB &= ~(1<<PINB0);						    //Fsync Low --> begin frame
+	PORTB &= ~(1<<PINB0);						    //F sync Low --> begin frame
 	SPI_transfer(MSdata);							
 	SPI_transfer(LSdata);
-	PORTB |= (1<<PINB0);						    //Fsync High --> End of frame
+	PORTB |= (1<<PINB0);						    //F sync High --> End of frame
 }
 
 void Set_AD9833(float frequency,int mode)
@@ -95,12 +99,22 @@ int main(void)
 {
 	UART_init();
 	SPI_init();
+	i=0; gen_freq=2000;
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);
 	PORTA=0;
 	SPI_write16(0x100);							//Reset AD9833 
-	Set_AD9833(4000,0);
+	TCCR1B|=(1<<CS12)|(1<<CS10)|(1<<WGM12);
+	TIMSK|=(1<<OCIE1A);
+	sei();
+	OCR1A=14399;		// required frequency =1Hz , OCR1A= (Clock_frequency*1s/prescaler(1024))-1
 	while (1) 
-    {				
+    {		
     }
 }
 
+ISR(TIMER1_COMPA_vect)
+{
+	Set_AD9833(gen_freq,0);
+	gen_freq= i==0 ? 1000 : 3000 ;
+	i^=1;
+}
