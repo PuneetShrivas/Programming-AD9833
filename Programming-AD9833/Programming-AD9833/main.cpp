@@ -12,31 +12,28 @@
 #define TRIANGLE 0x2102			  //mode 2
 #define BAUDRATE 9600			  //Baud rate for UART
 #define BAUD_PRESCALLER (((F_CPU/(BAUDRATE * 16UL))) - 1) //Predefined formula from data sheet
-
+#define TIMER1_PRESCALER 64
 #include <avr/io.h>
 #include <avr/delay.h>
 #include <math.h>
 #include <avr/interrupt.h>
 
-float gen_freq; 
-int i=0;
-
 void SPI_init(void)
 {
 	DDRB=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);         //sets SCK, MOSI,SS and PINB0 as output (F sync at Pinb0)
 	PORTB=(1<<PINB0)|(1<<PINB4);					//F sync High, SS is set high
-	SPCR=(1<<SPE)|(1<<MSTR)|(1<<CPOL)/*|(1<<SPR1)|(1<<SPR0)*/|(1<<SPIE);				//Enable SPI, set master, pre-scaler = 4, SPI Mode:2
+	SPCR=(1<<SPE)|(1<<MSTR)|(1<<CPOL)/*|(1<<SPR1)|(1<<SPR0)*/|(1<<SPIE)|(1<<SPI2X);				//Enable SPI, set master, pre-scaler = 2, SPI Mode:2
 }
 
 void UART_init(void)
 {
-	UBRRH = (uint8_t)(BAUD_PRESCALLER>>8);
-	UBRRL = (uint8_t)BAUD_PRESCALLER;
+	UBRRH = (unsigned char)(BAUD_PRESCALLER>>8);
+	UBRRL = (unsigned char)BAUD_PRESCALLER;
 	UCSRB = (1<<RXEN)|(1<<TXEN);
 	UCSRC = (1<<URSEL)|(1<<USBS)|(3<<UCSZ0); // Set frame format: 8data, 2stop bit
 }
 
-void UART_send(uint8_t data)
+void UART_send(unsigned char data)
  {
 	 while(!(UCSRA & (1<<UDRE)));
 	 UDR=data;
@@ -76,7 +73,7 @@ void SPI_write16 (unsigned short data)    			//send a 16bit word and use f sync
 	PORTB |= (1<<PINB0);						    //F sync High --> End of frame
 }
 
-void Set_AD9833(float frequency,int mode)
+void Set_AD9833(float frequency)
 {
 	long FreqReg = (frequency*pow(2,28))/(float)Fmclk;  //Calculate frequency to be sent to AD9833
 	int MSB = (int)((FreqReg &  0xFFFC000) >> 14);		  //Extract first 14 bits of FreqReg and place them at last 14 bits of MSB
@@ -87,34 +84,109 @@ void Set_AD9833(float frequency,int mode)
 	SPI_write16(LSB);									  //Write LSBs
 	SPI_write16(MSB);									  //Write MSBs
 	SPI_write16(0xC000);								  //Mode selection for writing to phase register bit, selection of PHASE0 register (Needs to be fixed)
-	switch(mode)
-	{
-		case 0 : SPI_write16(SINE); break;				  //Mode select Sine
-		case 1 : SPI_write16(SQUARE); break;			  //Mode select square
-		case 2 : SPI_write16(TRIANGLE); break;			  //Mode select triangle
-	}	
+	SPI_write16(0x2100);
 }
 
 int main(void)
 {
 	UART_init();
 	SPI_init();
-	i=0; gen_freq=2000;
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);
 	PORTA=0;
+	
+// 	//test timer
+// 	float count;
+// 	TCCR0|=(1<<CS10)|(1<<CS11);
+// 	TCNT0=0;
+// 	Set_AD9833(0x00);
+// 	count=TCNT0;
+// 	UART_send(count);
+// 	
+// 	float micros = ((count+1)*TIMER1_PRESCALER/F_CPU)*1000000;
+// 	float millis=micros*1000;
+// 	float linetime =532*320;
+	
+	//color yellow
+	int R=255,G=255,B=0;
+	float Y = 16.0 + (.003906 * ((65.738 * R) + (129.057 * G) + (25.064 * B)));
+	float RY = 128.0 + (.003906 * ((112.439 * R) + (-94.154 * G) + (-18.285 * B)));
+	float BY = 128.0 + (.003906 * ((-37.945 * R) + (-74.494 * G) + (112.439 * B)));
+	float freqY  =  1500 + (Y * 3.1372549);
+	float freqRY =  1500 + (RY * 3.1372549);
+	float freqBY =  1500 + (BY * 3.1372549);
+	
 	SPI_write16(0x100);							//Reset AD9833 
-	TCCR1B|=(1<<CS12)|(1<<CS10)|(1<<WGM12);
-	TIMSK|=(1<<OCIE1A);
-	sei();
-	OCR1A=14399;		// required frequency =1Hz , OCR1A= (Clock_frequency*1s/prescaler(1024))-1
+	
+	/*VIS CODE*/
+	//leader tone
+	Set_AD9833(1900);
+	_delay_ms(300);
+	//break
+	Set_AD9833(1200);
+	_delay_ms(10);
+	//leader
+	Set_AD9833(1900);
+	_delay_ms(300);
+	//VIS start bit
+	Set_AD9833(1200);
+	_delay_ms(30);
+	//PD90 VIS code = 99d = 0b1100011
+	//bit 0=1
+	Set_AD9833(1100);
+	_delay_ms(30);
+	//bit 1=1
+	Set_AD9833(1100);
+	_delay_ms(30);
+	//bit 2=0
+	Set_AD9833(1300);
+	_delay_ms(30);
+	//bit 3=0
+	Set_AD9833(1300);
+	_delay_ms(30);
+	//bit 4=0
+	Set_AD9833(1300);
+	_delay_ms(30);
+	//bit 5=1
+	Set_AD9833(1100);
+	_delay_ms(30);
+	//bit 6=1
+	Set_AD9833(1100);
+	_delay_ms(30);
+	//Parity bit
+	Set_AD9833(1100);
+	_delay_ms(30);
+	//stop bit
+	Set_AD9833(1200);
+	_delay_ms(30);
+	
+	
+	for (int i=1;i<=256/* -16 ? */;i++)
+	{
+		
+		//Sync Pulse
+		Set_AD9833(1200);
+		_delay_ms(20);
+		//Porch
+		Set_AD9833(1500);
+		_delay_ms(2.080);
+		
+		//Color transmission
+		//Y Scan odd line 
+		Set_AD9833(freqY);
+		_delay_us(484.8686);
+		//R-Y Scan average
+		Set_AD9833(freqRY);
+		_delay_us(484.8686);
+		//B-Y Scan average
+		Set_AD9833(freqBY);
+		_delay_us(484.8686);
+		//Y Scan even line
+		Set_AD9833(freqY);
+		_delay_us(484.8686);
+	}
+	
 	while (1) 
-    {		
+    {
     }
 }
 
-ISR(TIMER1_COMPA_vect)
-{
-	Set_AD9833(gen_freq,0);
-	gen_freq= i==0 ? 1000 : 3000 ;
-	i^=1;
-}
