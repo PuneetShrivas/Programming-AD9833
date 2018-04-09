@@ -41,28 +41,37 @@ void UART_send(unsigned char data)
 
 void led(int i)
 {
+	PORTA=0;
 	switch (i)
 	{
 		case 0 : PORTA|=(1<<PINA0);
-		_delay_ms(500);
-		PORTA = 0; break;
+		
+		 break;
 		case 1 : PORTA|=(1<<PINA1);
-		_delay_ms(500);
-		PORTA = 0; break;
+		
+		 break;
 		case 2 : PORTA|=(1<<PINA2);
-		_delay_ms(500);
-		PORTA = 0; break;
+		
+		 break;
 	}
 }
 
 void SPI_transfer(uint8_t data)
 {
-	PORTB|=(1<<PINB4);							//set SS pin high every time 
+	//PORTB|=(1<<PINB4);							//set SS pin high every time 
 	//UART_send(data);							//check data sent to AD
 	SPDR=data;
 	while(!(SPSR&(1<<SPIF))) {;/*wait for data transfer and recieving*/} //Error is possible here
 }
 
+void UART_write16(unsigned short data)
+{
+	unsigned char MSdata = ((data>>8) & 0x00FF);  	//filter out MS
+	unsigned char LSdata = (data & 0x00FF);			//filter out LS
+	UART_send(MSdata);
+	UART_send(LSdata);
+	
+}
 void SPI_write16 (unsigned short data)    			//send a 16bit word and use f sync
 {  
 	unsigned char MSdata = ((data>>8) & 0x00FF);  	//filter out MS
@@ -84,7 +93,7 @@ void Set_AD9833(float frequency)
 	SPI_write16(LSB);									  //Write LSBs
 	SPI_write16(MSB);									  //Write MSBs
 	SPI_write16(0xC000);								  //Mode selection for writing to phase register bit, selection of PHASE0 register (Needs to be fixed)
-	SPI_write16(0x2100);
+	SPI_write16(0x2000);                                                                                                                                                                                                                                                                                             
 }
 
 int main(void)
@@ -93,50 +102,47 @@ int main(void)
 	SPI_init();
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);
 	PORTA=0;
-	
+// 	
 // 	//test timer
 // 	float count;
 // 	TCCR0|=(1<<CS10)|(1<<CS11);
 // 	TCNT0=0;
-// 	Set_AD9833(0x00);
+// 	Set_AD9833(1900);
 // 	count=TCNT0;
-// 	UART_send(count);
-// 	
-// 	float micros = ((count+1)*TIMER1_PRESCALER/F_CPU)*1000000;
-// 	float millis=micros*1000;
-// 	float linetime =532*320;
+// 160.590278	
+
 	
 	//color yellow
-	int R=255,G=255,B=0;
+	int R=255,G=0,B=0;
 	float Y = 16.0 + (.003906 * ((65.738 * R) + (129.057 * G) + (25.064 * B)));
 	float RY = 128.0 + (.003906 * ((112.439 * R) + (-94.154 * G) + (-18.285 * B)));
 	float BY = 128.0 + (.003906 * ((-37.945 * R) + (-74.494 * G) + (112.439 * B)));
-	float freqY  =  1500 + (Y * 3.1372549);
-	float freqRY =  1500 + (RY * 3.1372549);
-	float freqBY =  1500 + (BY * 3.1372549);
+	float freqY  =  1500 + (Y * 3.1372549); //1757.2549(red)	1954.90196(green)	1628.62745(blue)	
+	float freqRY =  1500 + (RY * 3.1372549); //2252.94118(red)  1606.66667(green)	1845.09804(blue)
+	float freqBY =  1500 + (BY * 3.1372549); //1782.35294(red)	1669.41177(green)	2252.94118(blue)
 	
 	SPI_write16(0x100);							//Reset AD9833 
 	
 	/*VIS CODE*/
 	//leader tone
 	Set_AD9833(1900);
-	_delay_ms(300);
+	_delay_ms(300);led(0);
 	//break
 	Set_AD9833(1200);
-	_delay_ms(10);
+	_delay_ms(10);led(1);
 	//leader
 	Set_AD9833(1900);
-	_delay_ms(300);
+	_delay_ms(300);led(2);
 	//VIS start bit
 	Set_AD9833(1200);
-	_delay_ms(30);
+	_delay_ms(30);led(0);
 	//PD90 VIS code = 99d = 0b1100011
 	//bit 0=1
 	Set_AD9833(1100);
-	_delay_ms(30);
+	_delay_ms(30);led(1);
 	//bit 1=1
 	Set_AD9833(1100);
-	_delay_ms(30);
+	_delay_ms(30);led(2);
 	//bit 2=0
 	Set_AD9833(1300);
 	_delay_ms(30);
@@ -160,33 +166,70 @@ int main(void)
 	_delay_ms(30);
 	
 	
-	for (int i=1;i<=256/* -16 ? */;i++)
+	for (int i=1;i<=128;i++)
 	{
-		
 		//Sync Pulse
 		Set_AD9833(1200);
-		_delay_ms(20);
+		_delay_ms(19.8394072);
 		//Porch
 		Set_AD9833(1500);
-		_delay_ms(2.080);
-		
+		_delay_ms(1.9194072);
 		//Color transmission
+		
 		//Y Scan odd line 
-		Set_AD9833(freqY);
-		_delay_us(484.8686);
+		for (int j=1;j<108;j++)
+		{
+			Set_AD9833(1757.2549); _delay_us(532-160.590278);
+			Set_AD9833(1954.90196); _delay_us(532-160.590278);
+			Set_AD9833(1628.62745); _delay_us(532-160.590278);
+		}
+		_delay_us(532*2);
 		//R-Y Scan average
-		Set_AD9833(freqRY);
-		_delay_us(484.8686);
+		for (int j=1;j<108;j++)
+		{
+			Set_AD9833(2253); _delay_us(532-160.590278);
+			Set_AD9833(1607); _delay_us(532-160.590278);
+			Set_AD9833(1845); _delay_us(532-160.590278);
+		}
+		_delay_us(532*2);
 		//B-Y Scan average
-		Set_AD9833(freqBY);
-		_delay_us(484.8686);
+		for (int j=1;j<108;j++)
+		{
+			Set_AD9833(1782); _delay_us(532-160.590278);
+			Set_AD9833(1669); _delay_us(532-160.590278);
+			Set_AD9833(2253); _delay_us(532-160.590278);
+		}
+		_delay_us(532*2);
 		//Y Scan even line
-		Set_AD9833(freqY);
-		_delay_us(484.8686);
+		for (int j=1;j<108;j++)
+		{
+			Set_AD9833(1757); _delay_us(532-160.590278);
+			Set_AD9833(1955); _delay_us(532-160.590278);
+			Set_AD9833(1629); _delay_us(532-160.590278);
+		}
+		_delay_us(532*2);
+// 		//Y Scan odd line 
+// 		Set_AD9833(freqY);
+// 		_delay_us(170079.41);
+// 
+// 		//R-Y Scan average
+// 		Set_AD9833(freqRY);
+// 		_delay_us(170079.41);
+// 
+// 		//B-Y Scan average
+// 		Set_AD9833(freqBY);
+// 		_delay_us(170079.41);
+// 
+// 		//Y Scan even line
+// 		Set_AD9833(freqY);
+// 		_delay_us(170079.41);
+
 	}
+	SPI_write16(0x00);
 	
 	while (1) 
     {
+		
     }
 }
 
