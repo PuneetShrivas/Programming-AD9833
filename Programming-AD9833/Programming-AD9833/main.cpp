@@ -110,7 +110,6 @@ int main(void)
 // 	Set_AD9833(1900);
 // 	count=TCNT0;
 // 160.590278	
-
 	
 	//color yellow
 	int R=255,G=0,B=0;
@@ -126,23 +125,23 @@ int main(void)
 	/*VIS CODE*/
 	//leader tone
 	Set_AD9833(1900);
-	_delay_ms(300);led(0);
+	_delay_ms(300);
 	//break
 	Set_AD9833(1200);
-	_delay_ms(10);led(1);
+	_delay_ms(10);
 	//leader
 	Set_AD9833(1900);
-	_delay_ms(300);led(2);
+	_delay_ms(300);
 	//VIS start bit
 	Set_AD9833(1200);
-	_delay_ms(30);led(0);
+	_delay_ms(30);
 	//PD90 VIS code = 99d = 0b1100011
 	//bit 0=1
 	Set_AD9833(1100);
-	_delay_ms(30);led(1);
+	_delay_ms(30);
 	//bit 1=1
 	Set_AD9833(1100);
-	_delay_ms(30);led(2);
+	_delay_ms(30);
 	//bit 2=0
 	Set_AD9833(1300);
 	_delay_ms(30);
@@ -170,44 +169,42 @@ int main(void)
 	{
 		//Sync Pulse
 		Set_AD9833(1200);
-		_delay_ms(19.8394072);
+		_delay_ms(19);
+		_delay_us(839);
 		//Porch
 		Set_AD9833(1500);
-		_delay_ms(1.9194072);
+		_delay_ms(1);
+		_delay_us(920);
 		//Color transmission
 		
 		//Y Scan odd line 
-		for (int j=1;j<108;j++)
+		for (int j=1;j<=32;j++)
 		{
-			Set_AD9833(1757.2549); _delay_us(532-160.590278);
-			Set_AD9833(1954.90196); _delay_us(532-160.590278);
-			Set_AD9833(1628.62745); _delay_us(532-160.590278);
+			Set_AD9833(1757); 
+			_delay_us(532*5-161);
+			Set_AD9833(1955);
+			 _delay_us(532*5-160);
 		}
-		_delay_us(532*2);
 		//R-Y Scan average
-		for (int j=1;j<108;j++)
+		for (int j=1;j<=32;j++)
 		{
-			Set_AD9833(2253); _delay_us(532-160.590278);
-			Set_AD9833(1607); _delay_us(532-160.590278);
-			Set_AD9833(1845); _delay_us(532-160.590278);
+			Set_AD9833(2253);
+			 _delay_us(532*5-161);
+			Set_AD9833(1607);
+			 _delay_us(532*5-160);
 		}
-		_delay_us(532*2);
 		//B-Y Scan average
-		for (int j=1;j<108;j++)
+		for (int j=1;j<=32;j++)
 		{
-			Set_AD9833(1782); _delay_us(532-160.590278);
-			Set_AD9833(1669); _delay_us(532-160.590278);
-			Set_AD9833(2253); _delay_us(532-160.590278);
+			Set_AD9833(1782); _delay_us(532*5-160);
+			Set_AD9833(1669); _delay_us(532*5-161);
 		}
-		_delay_us(532*2);
 		//Y Scan even line
-		for (int j=1;j<108;j++)
+		for (int j=1;j<=32;j++)
 		{
-			Set_AD9833(1757); _delay_us(532-160.590278);
-			Set_AD9833(1955); _delay_us(532-160.590278);
-			Set_AD9833(1629); _delay_us(532-160.590278);
+			Set_AD9833(1757); _delay_us(532*5-160);
+			Set_AD9833(1955); _delay_us(532*5-161);
 		}
-		_delay_us(532*2);
 // 		//Y Scan odd line 
 // 		Set_AD9833(freqY);
 // 		_delay_us(170079.41);
@@ -223,13 +220,9 @@ int main(void)
 // 		//Y Scan even line
 // 		Set_AD9833(freqY);
 // 		_delay_us(170079.41);
-
-	}
-	SPI_write16(0x00);
-	
+	}	
 	while (1) 
     {
-		
     }
 }
 
