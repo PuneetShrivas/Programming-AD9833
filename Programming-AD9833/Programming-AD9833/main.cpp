@@ -13,19 +13,19 @@
 #define BAUDRATE 9600			  //Baud rate for UART
 #define BAUD_PRESCALLER (((F_CPU/(BAUDRATE * 16UL))) - 1) //Predefined formula from data sheet
 #define TIMER1_PRESCALER 1
- 
+#define PI 3.14159
 #include <avr/io.h>
 #include <util/delay.h>
 #include <math.h>
 #include <avr/interrupt.h>
-#include <util/atomic.h>
 
-double TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*532)-1);			//Counter Cycles for required time
-double TICKS = 65536-TEMP;												//Value for TCNT1 to implement timing by overflow
+int TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*532)-1);			//Counter Cycles for required time
+int TICKS = 65536-TEMP;												//Value for TCNT1 to implement timing by overflow
 	
 volatile float global_frequency=0;										//Volatile global variables for use in interrupt service routine
 volatile int cont=0;
-
+volatile unsigned int prev_phase=0;
+volatile unsigned int next_phase=0;
 void SPI_init(void)
 {
 	DDRB=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);								//sets SCK, MOSI,SS and PINB0 as output (F sync at Pinb0)
@@ -69,7 +69,6 @@ void UART_write16(unsigned short data)
 	unsigned char LSdata = (data & 0x00FF);			//filter out LS
 	UART_send(MSdata);
 	UART_send(LSdata);
-	
 }
 
 void SPI_write16 (unsigned short data)    			//send a 16bit word and use f sync
@@ -82,7 +81,7 @@ void SPI_write16 (unsigned short data)    			//send a 16bit word and use f sync
 	PORTB |= (1<<PINB0);						    //F sync High --> End of frame
 }
 
-void Set_AD9833(float frequency)
+void Set_AD9833(float frequency, unsigned int phase)
 {
 	long FreqReg = (frequency*pow(2,28))/(float)Fmclk;	  //Calculate frequency to be sent to AD9833
 	int MSB = (int)((FreqReg &  0xFFFC000) >> 14);		  //Extract first 14 bits of FreqReg and place them at last 14 bits of MSB
@@ -92,29 +91,47 @@ void Set_AD9833(float frequency)
 	SPI_write16(0x2100);								  //define waveform and set reset bit
 	SPI_write16(LSB);									  //Write LSBs
 	SPI_write16(MSB);									  //Write MSBs
-	SPI_write16(0xC000);								  //Mode selection for writing to phase register bit, selection of PHASE0 register (Needs to be fixed)
+	phase&=0x0FFF;
+	phase|=0xC000;
+	//SPI_write16(0xC000);								  //Mode selection for writing to phase register bit, selection of PHASE0 register (Needs to be fixed)
+	SPI_write16(phase);
 	SPI_write16(0x2000);                                                                                                                                                                                                                                                                                             
+}
+
+unsigned int getphase(float pphase,float freq, float time)
+{
+	time/=1000000;
+	pphase/=2048/PI;
+	float ph=((fmod(time,(1/freq))*2*PI*freq)+pphase)*2048/PI;
+	return (unsigned int) ph;
 }
 
 int main(void)
 {
 	UART_init();
 	SPI_init();
-	
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs
 	TCCR1A=0;
-	
-	//test timer
+	PORTA=0;
+	SPI_write16(0x100);
+	global_frequency=1900;
+		//test timer
 	{
 	//////////////////////////////////////////////////////////////////////////
-	// 	float cont;															//
-	// 	TCCR0|=(1<<CS10)|(1<<CS11);											//
-	// 	TCNT0=0;															//															
-	// 	Set_AD9833(1900);													//
-	// 	cont=TCNT0;															//
-	//  160.590278															//
+	// 	float cont;															
+	// 	TCCR0|=(1<<CS12);			led(1);							
+	// 	TCNT0=0;																													
+	// 	next_phase = getphase(prev_phase,global_frequency,532);
+	// 	//add frequency retrieval function here
+	// 	Set_AD9833(global_frequency,next_phase);
+	// 	prev_phase=next_phase;													
+	// 	cont=TCNT0;					
+	// 	PORTA=0;
+	// 	UART_write16(cont);										
+	// 	//160.590278				
+	// 	//325.520833 us with phase correction											
 	//////////////////////////////////////////////////////////////////////////
-}
+	}
 
 	//color conversion from RGB to Y/RY/BY 
 	int R=255,G=0,B=0;
@@ -130,44 +147,44 @@ int main(void)
 	
 	//VIS Code
 	{//leader tone
-	Set_AD9833(1900);
+	Set_AD9833(1900,0);
 	_delay_ms(300);
 	//break
-	Set_AD9833(1200);
+	Set_AD9833(1200,0);
 	_delay_ms(10);
 	//leader
-	Set_AD9833(1900);
+	Set_AD9833(1900,0);
 	_delay_ms(300);
 	//VIS start bit
-	Set_AD9833(1200);
+	Set_AD9833(1200,0);
 	_delay_ms(30);
 	//PD90 VIS code = 99d = 0b1100011
 	//bit 0=1
-	Set_AD9833(1100);
+	Set_AD9833(1100,0);
 	_delay_ms(30);
 	//bit 1=1
-	Set_AD9833(1100);
+	Set_AD9833(1100,0);
 	_delay_ms(30);
 	//bit 2=0
-	Set_AD9833(1300);
+	Set_AD9833(1300,0);
 	_delay_ms(30);
 	//bit 3=0
-	Set_AD9833(1300);
+	Set_AD9833(1300,0);
 	_delay_ms(30);
 	//bit 4=0
-	Set_AD9833(1300);
+	Set_AD9833(1300,0);
 	_delay_ms(30);
 	//bit 5=1
-	Set_AD9833(1100);
+	Set_AD9833(1100,0);
 	_delay_ms(30);
 	//bit 6=1
-	Set_AD9833(1100);
+	Set_AD9833(1100,0);
 	_delay_ms(30);
 	//Parity bit
-	Set_AD9833(1100);
+	Set_AD9833(1100,0);
 	_delay_ms(30);
 	//stop bit
-	Set_AD9833(1200);
+	Set_AD9833(1200,0);
 	_delay_ms(30);
 	}
 	
@@ -175,11 +192,11 @@ int main(void)
 	for (int i=1;i<=128;i++)
 	{
 	//Sync Pulse
-	Set_AD9833(1200);
+	Set_AD9833(1200,0);
 	_delay_ms(19);
 	_delay_us(839);
 	//Porch
-	Set_AD9833(1500);
+	Set_AD9833(1500,0);
 	_delay_ms(1);
 	_delay_us(920);
 	//Color transmission
@@ -187,6 +204,7 @@ int main(void)
 	//single color using interrupts
 	
 	{
+		
 	//Y Scan odd line
 	cont=0;	
 	global_frequency=freqY;	
@@ -194,10 +212,11 @@ int main(void)
 	TCCR1B|=(1<<CS10);	
 	TIMSK|=(1<<TOIE1);
 	TCNT1=65534;
-	while (cont<1);
+	while(cont<320);
 	cli();
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
+	
 	//R-Y Scan average
 	cont=0;
 	global_frequency=freqRY;
@@ -205,10 +224,11 @@ int main(void)
 	TCCR1B|=(1<<CS10);
 	TIMSK|=(1<<TOIE1);
 	TCNT1=TICKS;
-	while (cont<1);
+	while(cont<320);
 	cli();
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
+	
 	//B-Y Scan average
 	cont=0;
 	global_frequency=freqBY;
@@ -216,10 +236,11 @@ int main(void)
 	TCCR1B|=(1<<CS10);
 	TIMSK|=(1<<TOIE1);
 	TCNT1=TICKS;
-	while (cont<1);
+	while(cont<320);
 	cli();
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
+	
 	//Y Scan even line
 	cont=0; 
 	global_frequency=freqY;
@@ -227,13 +248,11 @@ int main(void)
 	TCCR1B|=(1<<CS10);
 	TIMSK|=(1<<TOIE1);
 	TCNT1=TICKS;
-	while (cont<2);
+	while(cont<321);
 	cli();
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
 	}
-	
-	
 	{
 // 		//Y Scan odd line
 // 		for (int j=1;j<=8;j++)
@@ -264,15 +283,15 @@ int main(void)
 // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
 // 		}
 // 		//Y Scan odd line
-// 		Set_AD9833(freqY); led(1);
+// 		Set_AD9833(freqY); 
 // 		_delay_us(170079.41);
 // 
 // 		//R-Y Scan average
-// 		Set_AD9833(freqRY); led(2);
+// 		Set_AD9833(freqRY); 
 // 		_delay_us(170079.41);
 // 
 // 		//B-Y Scan average
-// 		Set_AD9833(freqBY); led(0);
+// 		Set_AD9833(freqBY); 
 // 		_delay_us(170079.41);
 // 
 // 		//Y Scan even line
@@ -280,21 +299,22 @@ int main(void)
 // 		_delay_us(170079.41);
 }
 }	
-	PORTA=0; PORTA|=(1<<PINA0);
+    Set_AD9833(0x00,0);
 	while(1)
-	{
-		
+	{		
 	}
-
 }
 
 ISR(TIMER1_OVF_vect)
 {	
 	TCNT1=TICKS;
 	cont++;
-	Set_AD9833(global_frequency);
+	next_phase = getphase(prev_phase,global_frequency,532);
+	//add frequency retrieval function here
+	Set_AD9833(global_frequency,next_phase);
+	prev_phase=next_phase;
 }
 	
- EMPTY_INTERRUPT(SPI_STC_vect) 
+ EMPTY_INTERRUPT(SPI_STC_vect) //to prevent reset on Empty SPI interrupt 
 
 
