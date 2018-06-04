@@ -13,20 +13,23 @@
 #define BAUDRATE 9600			  //Baud rate for UART
 #define BAUD_PRESCALLER (((F_CPU/(BAUDRATE * 16UL))) - 1) //Predefined formula from data sheet
 #define TIMER1_PRESCALER 1
+#define TIMER0_PRESCALER 0
 #define PI 3.14159
 #include <avr/io.h>
 #include <util/delay.h>
 #include <math.h>
 #include <avr/interrupt.h>
 
-int TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*532)-1);			//Counter Cycles for required time
+int TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*552)-1);			//Counter Cycles for required time
 int TICKS = 65536-TEMP;												//Value for TCNT1 to implement timing by overflow
 	
 volatile float global_frequency=0;										//Volatile global variables for use in interrupt service routine
 volatile int cont=0;
 volatile unsigned int prev_phase=0;
 volatile unsigned int next_phase=0;
-
+volatile int contprev = 0;
+volatile int contnext = 0;
+volatile float timeprev = 1;
 void SPI_init(void)
 {
 	DDRB=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);								//sets SCK, MOSI,SS and PINB0 as output (F sync at Pinb0)
@@ -114,12 +117,11 @@ int main(void)
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs
 	TCCR1A=0;
 	PORTA=0;
+	
 	SPI_write16(0x100);
 		//test timer
 	{
-	//////////////////////////////////////////////////////////////////////////
-	// 	float cont;															
-	// 	TCCR0|=(1<<CS12);			led(1);							
+	//////////////////////////////////////////////////////////////////////////						
 	// 	TCNT0=0;																													
 	// 	next_phase = getphase(prev_phase,global_frequency,532);
 	// 	//add frequency retrieval function here
@@ -135,16 +137,14 @@ int main(void)
 
 // 	while(1)
 // 	{
+// 		TCCR0=(1<<CS00)|(1<<CS01);
+// 		TCNT0=0;
 // 		next_phase=getphase(prev_phase,2000,100000);
-// 		Set_AD9833(3000,0);
-// 		prev_phase=next_phase;
-// 		_delay_ms(100);
-// 		next_phase=getphase(prev_phase,3000,100000);
-// 		Set_AD9833(2000,0);
-// 		prev_phase=next_phase;
-// 		_delay_ms(100);
+// 		Set_AD9833(2000,next_phase);
+// 		cont=TCNT0 ;
+// 		UART_write16(cont);
 // 	}
-
+// }
 	//color conversion from RGB to Y/RY/BY 
 	int R=0,G=255,B=0;
 	float Y = 16.0 + (.003906 * ((65.738 * R) + (129.057 * G) + (25.064 * B)));
@@ -201,7 +201,7 @@ int main(void)
 	}
 	
 	//image data
-	for (int i=1;i<=128;i++)
+	for (int i=1;i<=5;i++)
 	{
 	//Sync Pulse
 	Set_AD9833(1200,0);
@@ -220,10 +220,10 @@ int main(void)
 	cont=0;	
 	global_frequency=freqY;	
 	sei();
-	TCCR1B|=(1<<CS10);	
+	TCCR1B|=(1<<CS10);
 	TIMSK|=(1<<TOIE1);
 	TCNT1=65534;
-	while(cont<320);
+	while(cont<2);
 	cli();
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
@@ -311,18 +311,22 @@ int main(void)
 }
 }	
     Set_AD9833(0x00,0);
+
 	while(1)
 	{		
 	}
 }
 
 ISR(TIMER1_OVF_vect)
-{	
+{
+// 	contprev=contnext;
+// 	contnext=TCNT0;
+// 	timeprev = (contnext-contprev)*TIMER0_PRESCALER/F_CPU;
 	TCNT1=TICKS;
 	next_phase = getphase(prev_phase,global_frequency,532);
 	cont++;
 	//add frequency retrieval function here
-	Set_AD9833(global_frequency,prev_phase);
+	Set_AD9833(global_frequency,next_phase);
 	prev_phase=next_phase;
 }
 	
