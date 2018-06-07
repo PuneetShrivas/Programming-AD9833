@@ -19,12 +19,16 @@
 #include <util/delay.h>
 #include <math.h>
 #include <avr/interrupt.h>
+#include <util/atomic.h>
 
-int TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*552)-1);			//Counter Cycles for required time
-int TICKS = 65536-TEMP;												//Value for TCNT1 to implement timing by overflow
+
+int TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*557)-1);			//Counter Cycles for required time
+int TICKS = 65535-TEMP;												//Value for TCNT1 to implement timing by overflow
 	
 volatile float global_frequency=0;										//Volatile global variables for use in interrupt service routine
+volatile float prev_freq = 0;
 volatile int cont=0;
+int cont_copy=0;
 volatile unsigned int prev_phase=0;
 volatile unsigned int next_phase=0;
 volatile int contprev = 0;
@@ -34,7 +38,7 @@ void SPI_init(void)
 {
 	DDRB=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);								//sets SCK, MOSI,SS and PINB0 as output (F sync at Pinb0)
 	PORTB=(1<<PINB0)|(1<<PINB4);										//F sync High, SS is set high
-	SPCR=(1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<SPIE)|(1<<SPI2X);				//Enable SPI, set master, pre-scaler = 2, SPI Mode:2
+	SPCR=(1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<SPIE)|(1<<SPI2X);				//Enable SPI, set master, pre scaler = 2, SPI Mode:2
 }
 
 void UART_init(void)
@@ -88,7 +92,7 @@ void SPI_write16 (unsigned short data)    			//send a 16bit word and use f sync
 void Set_AD9833(float frequency, unsigned int phase)
 {
 	long FreqReg = (frequency*pow(2,28))/(float)Fmclk;	  //Calculate frequency to be sent to AD9833
-	int MSB = (int)((FreqReg &  0xFFFC000) >> 14);		  //Extract first 14 bits of FreqReg and place them at last 14 bits of MSB
+	int MSB = (int)((FreqReg &  0xFFFC000) >> 14);		   //Extract first 14 bits of FreqReg and place them at last 14 bits of MSB
 	int LSB = (int)((FreqReg & 0x3FFF));				  //Extract last 14 bits of FreqReg and place them at last 14 bits of MSB	
 	MSB|=0x4000;										  //Set D14,D15 = (1,0) for using FREQ0 registers, MSB has all 16 bits set
 	LSB|=0x4000;     									  //Set D14,D15 = (1,0) for using FREQ0 registers, LSB has all 16 bits set
@@ -110,6 +114,16 @@ unsigned int getphase(float pphase,float freq, float time)
 	return (unsigned int) ph;
 }
 
+//color conversion from RGB to Y/RY/BY
+int R=0,G=0,B=0;
+float Y = 16.0 + (.003906 * ((65.738 * R) + (129.057 * G) + (25.064 * B)));
+float RY = 128.0 + (.003906 * ((112.439 * R) + (-94.154 * G) + (-18.285 * B)));
+float BY = 128.0 + (.003906 * ((-37.945 * R) + (-74.494 * G) + (112.439 * B)));
+//frequency calculation and documented values
+float freqY  =  1500 + (Y * 3.1372549);			//1757.2549(red)	1954.90196(green)	1628.62745(blue)
+float freqRY =  1500 + (RY * 3.1372549);		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
+float freqBY =  1500 + (BY * 3.1372549);		//1782.35294(red)	1669.41177(green)	2252.94118(blue)
+
 int main(void)
 {
 	UART_init();
@@ -117,8 +131,41 @@ int main(void)
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs
 	TCCR1A=0;
 	PORTA=0;
+	TCCR0=(1<<CS00)|(1<<CS01);
+// 	for(int i=1;i<5;i++)
+// 	{
+// 		j=i;
+// 	cont=0;
+// 	contnext=0;
+// 	contprev=0;
+// 	TCNT0=0;
+// 	sei();
+// 	TCCR1B|=(1<<CS10);
+// 	TIMSK|=(1<<OCIE1A);
+// 	TCNT1=0;
+// 	OCR1A=TEMP;
+// 	//TCNT1=65534;
+// 	do 
+// 	{
+// 		ATOMIC_BLOCK(ATOMIC_FORCEON)
+// 		{
+// 			cont_copy=cont;
+// 		}
+// 	} while (cont_copy<2);
+// 	cli();
+// 	TIMSK&=~(1<<OCR1A);
+// 	TCCR1B=0x00;
+// 	UART_send(contprev);
+// 	UART_send(contnext);
+// 	UART_send(j);
+// // 	UART_send(contprev);
+// // 	UART_send(contnext);
+// 	}
 	
-	SPI_write16(0x100);
+
+
+	
+/*	SPI_write16(0x100);*/
 		//test timer
 	{
 	//////////////////////////////////////////////////////////////////////////						
@@ -145,20 +192,13 @@ int main(void)
 // 		UART_write16(cont);
 // 	}
 // }
-	//color conversion from RGB to Y/RY/BY 
-	int R=0,G=255,B=0;
-	float Y = 16.0 + (.003906 * ((65.738 * R) + (129.057 * G) + (25.064 * B)));
-	float RY = 128.0 + (.003906 * ((112.439 * R) + (-94.154 * G) + (-18.285 * B)));
-	float BY = 128.0 + (.003906 * ((-37.945 * R) + (-74.494 * G) + (112.439 * B)));
-	//frequency calculation and documented values
-	float freqY  =  1500 + (Y * 3.1372549);			//1757.2549(red)	1954.90196(green)	1628.62745(blue)	
-	float freqRY =  1500 + (RY * 3.1372549);		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
-	float freqBY =  1500 + (BY * 3.1372549);		//1782.35294(red)	1669.41177(green)	2252.94118(blue)|
+
 	
 	SPI_write16(0x100);								//Reset AD9833 
-	
+
 	//VIS Code
 	{//leader tone
+	_delay_ms(500);
 	Set_AD9833(1900,0);
 	_delay_ms(300);
 	//break
@@ -169,146 +209,159 @@ int main(void)
 	_delay_ms(300);
 	//VIS start bit
 	Set_AD9833(1200,0);
-	_delay_ms(30);
+	_delay_ms(29);
+	_delay_us(839);
 	//PD90 VIS code = 99d = 0b1100011
 	//bit 0=1
 	Set_AD9833(1100,0);
-	_delay_ms(30);
+	_delay_ms(29);
+	_delay_us(839);
 	//bit 1=1
 	Set_AD9833(1100,0);
-	_delay_ms(30);
+	_delay_ms(29);
+	_delay_us(839);
 	//bit 2=0
 	Set_AD9833(1300,0);
-	_delay_ms(30);
+	_delay_ms(29);
+	_delay_us(839);
 	//bit 3=0
 	Set_AD9833(1300,0);
-	_delay_ms(30);
+	_delay_ms(29);
+	_delay_us(839);
 	//bit 4=0
 	Set_AD9833(1300,0);
-	_delay_ms(30);
+	_delay_ms(29);
+	_delay_us(839);
 	//bit 5=1
 	Set_AD9833(1100,0);
-	_delay_ms(30);
+	_delay_ms(29);
+	_delay_us(839);
 	//bit 6=1
 	Set_AD9833(1100,0);
-	_delay_ms(30);
+	_delay_ms(29);
+	_delay_us(839);
 	//Parity bit
-	Set_AD9833(1100,0);
-	_delay_ms(30);
+	Set_AD9833(1300,0);
+	_delay_ms(29);
+	_delay_us(839);
 	//stop bit
 	Set_AD9833(1200,0);
-	_delay_ms(30);
+	_delay_ms(29);
+	_delay_us(839);
 	}
-	
-	//image data
-	for (int i=1;i<=5;i++)
+
+// 	
+//image data
+	for (int i=1;i<=128;i++)
 	{
 	//Sync Pulse
 	Set_AD9833(1200,0);
 	_delay_ms(19);
-	_delay_us(839);
+	_delay_us(675);
 	//Porch
 	Set_AD9833(1500,0);
 	_delay_ms(1);
-	_delay_us(920);
+	_delay_us(754);
+
 	//Color transmission	
 	//single color using interrupts
-	
-	{
-		
+// 	
+// 	{
+// 		
 	//Y Scan odd line
 	cont=0;	
 	global_frequency=freqY;	
 	sei();
-	TCCR1B|=(1<<CS10);
-	TIMSK|=(1<<TOIE1);
-	TCNT1=65534;
-	while(cont<2);
+	TCCR1B|=(1<<CS10)|(1<<WGM12);
+	TIMSK|=(1<<OCIE1A);
+	//TCNT1=65534;
+	OCR1A=TEMP;
+	while(cont<1280);
 	cli();
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
-	
-	//R-Y Scan average
-	cont=0;
-	global_frequency=freqRY;
-	sei();
-	TCCR1B|=(1<<CS10);
-	TIMSK|=(1<<TOIE1);
-	TCNT1=TICKS;
-	while(cont<320);
-	cli();
-	TIMSK&=~(1<<OCIE1A);
-	TCCR1B=0x00;
-	
-	//B-Y Scan average
-	cont=0;
-	global_frequency=freqBY;
-	sei();
-	TCCR1B|=(1<<CS10);
-	TIMSK|=(1<<TOIE1);
-	TCNT1=TICKS;
-	while(cont<320);
-	cli();
-	TIMSK&=~(1<<OCIE1A);
-	TCCR1B=0x00;
-	
-	//Y Scan even line
-	cont=0; 
-	global_frequency=freqY;
-	sei();
-	TCCR1B|=(1<<CS10);
-	TIMSK|=(1<<TOIE1);
-	TCNT1=TICKS;
-	while(cont<321);
-	cli();
-	TIMSK&=~(1<<OCIE1A);
-	TCCR1B=0x00;
-	}
-	{
-// 		//Y Scan odd line
-// 		for (int j=1;j<=8;j++)
-// 		{
-// 			Set_AD9833(1757.2549);
-// 			_delay_us(10479.409722); //532*20-160.590278
-// 			Set_AD9833(1954.90196);
-// 			 _delay_us(10479.409722);
-// 		}
-// 		//R-Y Scan average
-// 		for (int j=1;j<=8;j++)
-// 		{
-// 			Set_AD9833(2252.94118);
-// 			 _delay_us(10479.409722);
-// 			Set_AD9833(1606.66667);
-// 			 _delay_us(10479.409722);
-// 		}
-// 		//B-Y Scan average
-// 		for (int j=1;j<=8;j++)
-// 		{
-// 			Set_AD9833(1782.35294); _delay_us(10479.409722);
-// 			Set_AD9833(1669.41177); _delay_us(10479.409722);
-// 		}
-// 		//Y Scan even line
-// 		for (int j=1;j<=8;j++)
-// 		{
-// 			Set_AD9833(1757.2549); _delay_us(10479.409722);
-// 			Set_AD9833(1954.90196); _delay_us(10479.409722);
-// 		}
-// 		//Y Scan odd line
-// 		Set_AD9833(freqY,0); 
-// 		_delay_us(170079.41);
-// 
-// 		//R-Y Scan average
-// 		Set_AD9833(freqRY,0); 
-// 		_delay_us(170079.41);
-// 
-// 		//B-Y Scan average
-// 		Set_AD9833(freqBY,0); 
-// 		_delay_us(170079.41);
-// 
-// 		//Y Scan even line
-// 		Set_AD9833(freqY,0);
-// 		_delay_us(170079.41);
-}
+// 	
+// // 	//R-Y Scan average
+// // 	cont=0;
+// // 	global_frequency=freqRY;
+// // 	sei();
+// // 	TCCR1B|=(1<<CS10);
+// // 	TIMSK|=(1<<TOIE1);
+// // 	TCNT1=TICKS;
+// // 	while(cont<320);
+// // 	cli();
+// // 	TIMSK&=~(1<<OCIE1A);
+// // 	TCCR1B=0x00;
+// // 	
+// // 	//B-Y Scan average
+// // 	cont=0;
+// // 	global_frequency=freqBY;
+// // 	sei();
+// // 	TCCR1B|=(1<<CS10);
+// // 	TIMSK|=(1<<TOIE1);
+// // 	TCNT1=TICKS;
+// // 	while(cont<320);
+// // 	cli();
+// // 	TIMSK&=~(1<<OCIE1A);
+// // 	TCCR1B=0x00;
+// // 	
+// // 	//Y Scan even line
+// // 	cont=0; 
+// // 	global_frequency=freqY;
+// // 	sei();
+// // 	TCCR1B|=(1<<CS10);
+// // 	TIMSK|=(1<<TOIE1);
+// // 	TCNT1=TICKS;
+// // 	while(cont<321);
+// // 	cli();
+// // 	TIMSK&=~(1<<OCIE1A);
+// // 	TCCR1B=0x00;
+// 	}
+// 	{
+// // 		//Y Scan odd line
+// // 		for (int j=1;j<=8;j++)
+// // 		{
+// // 			Set_AD9833(1757.2549);
+// // 			_delay_us(10479.409722); //532*20-160.590278
+// // 			Set_AD9833(1954.90196);
+// // 			 _delay_us(10479.409722);
+// // 		}
+// // 		//R-Y Scan average
+// // 		for (int j=1;j<=8;j++)
+// // 		{
+// // 			Set_AD9833(2252.94118);
+// // 			 _delay_us(10479.409722);
+// // 			Set_AD9833(1606.66667);
+// // 			 _delay_us(10479.409722);
+// // 		}
+// // 		//B-Y Scan average
+// // 		for (int j=1;j<=8;j++)
+// // 		{
+// // 			Set_AD9833(1782.35294); _delay_us(10479.409722);
+// // 			Set_AD9833(1669.41177); _delay_us(10479.409722);
+// // 		}
+// // 		//Y Scan even line
+// // 		for (int j=1;j<=8;j++)
+// // 		{
+// // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
+// // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
+// // 		}
+// // 		//Y Scan odd line
+// // 		Set_AD9833(freqY,0); 
+// // 		_delay_us(170079.41);
+// // 
+// // 		//R-Y Scan average
+// // 		Set_AD9833(freqRY,0); 
+// // 		_delay_us(170079.41);
+// // 
+// // 		//B-Y Scan average
+// // 		Set_AD9833(freqBY,0); 
+// // 		_delay_us(170079.41);
+// // 
+// // 		//Y Scan even line
+// // 		Set_AD9833(freqY,0);
+// // 		_delay_us(170079.41);
+// }
 }	
     Set_AD9833(0x00,0);
 
@@ -317,17 +370,28 @@ int main(void)
 	}
 }
 
-ISR(TIMER1_OVF_vect)
+ISR(TIMER1_COMPA_vect)
 {
+
+// 	timeprev = (contnext-contprev)*TIMER0_PRESCALER/F_CPU;
+	//TCNT1=TICKS;
 // 	contprev=contnext;
 // 	contnext=TCNT0;
-// 	timeprev = (contnext-contprev)*TIMER0_PRESCALER/F_CPU;
-	TCNT1=TICKS;
-	next_phase = getphase(prev_phase,global_frequency,532);
+	//UART_send(contnext);
+	
+	
+ 	prev_freq = global_frequency;
+	if(cont==320) global_frequency = freqRY;
+	else if(cont==640) global_frequency = freqBY;
+	else if(cont==960) global_frequency = freqY;
+	next_phase = getphase(prev_phase,prev_freq,532);
 	cont++;
-	//add frequency retrieval function here
 	Set_AD9833(global_frequency,next_phase);
-	prev_phase=next_phase;
+	//UART_send(cont);
+// 	//add frequency retrieval function here
+// 	if(prev_freq==global_frequency) ;
+// 	else {}
+ 	prev_phase=next_phase;
 }
 	
  EMPTY_INTERRUPT(SPI_STC_vect) //to prevent reset on Empty SPI interrupt 
