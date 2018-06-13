@@ -34,6 +34,7 @@ volatile unsigned int next_phase=0;
 volatile int contprev = 0;
 volatile int contnext = 0;
 volatile float timeprev = 1;
+volatile int t=0;
 void SPI_init(void)
 {
 	DDRB=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);								//sets SCK, MOSI,SS and PINB0 as output (F sync at Pinb0)
@@ -115,14 +116,23 @@ unsigned int getphase(float pphase,float freq, float time)
 }
 
 //color conversion from RGB to Y/RY/BY
-int R=0,G=0,B=0;
-float Y = 16.0 + (.003906 * ((65.738 * R) + (129.057 * G) + (25.064 * B)));
-float RY = 128.0 + (.003906 * ((112.439 * R) + (-94.154 * G) + (-18.285 * B)));
-float BY = 128.0 + (.003906 * ((-37.945 * R) + (-74.494 * G) + (112.439 * B)));
+int R1=255,G1=0,B1=0;
+float Y1 = 16.0 + (.003906 * ((65.738 * R1) + (129.057 * G1) + (25.064 * B1)));
+float RY1 = 128.0 + (.003906 * ((112.439 * R1) + (-94.154 * G1) + (-18.285 * B1)));
+float BY1 = 128.0 + (.003906 * ((-37.945 * R1) + (-74.494 * G1) + (112.439 * B1)));
 //frequency calculation and documented values
-float freqY  =  1500 + (Y * 3.1372549);			//1757.2549(red)	1954.90196(green)	1628.62745(blue)
-float freqRY =  1500 + (RY * 3.1372549);		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
-float freqBY =  1500 + (BY * 3.1372549);		//1782.35294(red)	1669.41177(green)	2252.94118(blue)
+volatile float freqY1  = 1628.62745; /*1500 + (Y1 * 3.1372549);*/			//1757.2549(red)	1954.90196(green)	1628.62745(blue)
+volatile float freqRY1 = 1845.09804;  /*1500 + (RY1 * 3.1372549);*/		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
+volatile float freqBY1 = 2252.94118; /*1500 + (BY1 * 3.1372549);*/		//1782.35294(red)	1669.41177(green)	2252.94118(blue)
+
+int R2=0,G2=255,B2=0;
+float Y2 = 16.0 + (.003906 * ((65.738 * R2) + (129.057 * G2) + (25.064 * B2)));
+float RY2 = 128.0 + (.003906 * ((112.439 * R2) + (-94.154 * G2) + (-18.285 * B2)));
+float BY2 = 128.0 + (.003906 * ((-37.945 * R2) + (-74.494 * G2) + (112.439 * B2)));
+//frequency calculation and documented values
+volatile float freqY2  = 1954.90196; /*1500 + (Y2 * 3.1372549);*/			//1757.2549(red)	1954.90196(green)	1628.62745(blue)
+volatile float freqRY2 = 1606.66667; /*1500 + (RY2 * 3.1372549);*/		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
+volatile float freqBY2 = 1669.41177; /*1500 + (BY2 * 3.1372549);*/		//1782.35294(red)	1669.41177(green)	2252.94118(blue)
 
 int main(void)
 {
@@ -181,14 +191,13 @@ int main(void)
 	// 	//325.520833 us with phase correction											
 	//////////////////////////////////////////////////////////////////////////
 	}
-
-// 	while(1)
+// 	TCCR1B|=(1<<CS10);	
+// 	for(int i=1;i<=10;i++)
 // 	{
-// 		TCCR0=(1<<CS00)|(1<<CS01);
-// 		TCNT0=0;
-// 		next_phase=getphase(prev_phase,2000,100000);
+// 		TCNT1=0;
+// 		//next_phase=getphase(prev_phase,2000,100000);
 // 		Set_AD9833(2000,next_phase);
-// 		cont=TCNT0 ;
+// 		cont=TCNT1 ;
 // 		UART_write16(cont);
 // 	}
 // }
@@ -257,11 +266,11 @@ int main(void)
 	//Sync Pulse
 	Set_AD9833(1200,0);
 	_delay_ms(19);
-	_delay_us(675);
+	_delay_us(841);
 	//Porch
 	Set_AD9833(1500,0);
 	_delay_ms(1);
-	_delay_us(754);
+	_delay_us(921);
 
 	//Color transmission	
 	//single color using interrupts
@@ -269,18 +278,20 @@ int main(void)
 // 	{
 // 		
 	//Y Scan odd line
-	cont=0;	
-	global_frequency=freqY;	
+	cont=1;	
+	global_frequency=freqY1;	
 	sei();
 	TCCR1B|=(1<<CS10)|(1<<WGM12);
 	TIMSK|=(1<<OCIE1A);
 	//TCNT1=65534;
 	OCR1A=TEMP;
-	while(cont<1280);
+	while(cont<=1280);
 	cli();
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
-// 	
+// 	_delay_ms(4);
+// 	_delay_us(25);
+{// 	
 // // 	//R-Y Scan average
 // // 	cont=0;
 // // 	global_frequency=freqRY;
@@ -346,22 +357,23 @@ int main(void)
 // // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
 // // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
 // // 		}
-// // 		//Y Scan odd line
-// // 		Set_AD9833(freqY,0); 
-// // 		_delay_us(170079.41);
-// // 
-// // 		//R-Y Scan average
-// // 		Set_AD9833(freqRY,0); 
-// // 		_delay_us(170079.41);
-// // 
-// // 		//B-Y Scan average
-// // 		Set_AD9833(freqBY,0); 
-// // 		_delay_us(170079.41);
-// // 
-// // 		//Y Scan even line
-// // 		Set_AD9833(freqY,0);
-// // 		_delay_us(170079.41);
+		//Y Scan odd line
+// 		Set_AD9833(freqY1,0); 
+// 		_delay_us(170079.41);
+// 
+// 		//R-Y Scan average
+// 		Set_AD9833(freqRY1,0); 
+// 		_delay_us(170079.41);
+// 
+// 		//B-Y Scan average
+// 		Set_AD9833(freqBY1,0); 
+// 		_delay_us(170079.41);
+// 
+// 		//Y Scan even line
+// 		Set_AD9833(freqY1,0);
+// 		_delay_us(170079.41);
 // }
+}
 }	
     Set_AD9833(0x00,0);
 
@@ -380,10 +392,31 @@ ISR(TIMER1_COMPA_vect)
 	//UART_send(contnext);
 	
 	
- 	prev_freq = global_frequency;
-	if(cont==320) global_frequency = freqRY;
-	else if(cont==640) global_frequency = freqBY;
-	else if(cont==960) global_frequency = freqY;
+
+	 
+// 	if(cont==320) global_frequency = freqRY1;
+// 	else if(cont==640) global_frequency = freqBY1;
+// 	else if(cont==960) global_frequency = freqY1;
+// 	
+	if(((cont-1)%20)==0) 
+	{
+		t = (cont-1)/20;
+		if((t%2)==0)
+		{
+			if(t<15) global_frequency = 1628.62745;
+			else if(t<31) global_frequency = 1845.09804;
+			else if(t<47) global_frequency = 2252.94118;
+			else if(t<63) global_frequency = 1628.62745;
+		}
+		else if((t%2)==1)
+		{
+			if(t<16) global_frequency = 1954.90196;
+			else if(t<32) global_frequency = 1606.66667;
+			else if(t<48) global_frequency = 1669.41177;
+			else if(t<64) global_frequency = 1954.90196;
+		}
+		
+	}
 	next_phase = getphase(prev_phase,prev_freq,532);
 	cont++;
 	Set_AD9833(global_frequency,next_phase);
@@ -392,6 +425,7 @@ ISR(TIMER1_COMPA_vect)
 // 	if(prev_freq==global_frequency) ;
 // 	else {}
  	prev_phase=next_phase;
+	prev_freq = global_frequency;
 }
 	
  EMPTY_INTERRUPT(SPI_STC_vect) //to prevent reset on Empty SPI interrupt 
