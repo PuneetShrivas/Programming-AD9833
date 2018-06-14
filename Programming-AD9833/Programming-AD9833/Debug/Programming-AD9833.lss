@@ -15,19 +15,19 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY
   5 .debug_aranges 00000080  00000000  00000000  000013bc  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_info   00001574  00000000  00000000  0000143c  2**0
+  6 .debug_info   00001560  00000000  00000000  0000143c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_abbrev 00000778  00000000  00000000  000029b0  2**0
+  7 .debug_abbrev 00000778  00000000  00000000  0000299c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_line   000005c6  00000000  00000000  00003128  2**0
+  8 .debug_line   000005c4  00000000  00000000  00003114  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_frame  00000230  00000000  00000000  000036f0  2**2
+  9 .debug_frame  00000230  00000000  00000000  000036d8  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    000005a0  00000000  00000000  00003920  2**0
+ 10 .debug_str    00000597  00000000  00000000  00003908  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    00000f6a  00000000  00000000  00003ec0  2**0
+ 11 .debug_loc    00000f6a  00000000  00000000  00003e9f  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000070  00000000  00000000  00004e2a  2**0
+ 12 .debug_ranges 00000070  00000000  00000000  00004e09  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -377,11 +377,11 @@ int main(void)
      26a:	1f bc       	out	0x2f, r1	; 47
 	PORTA=0;
      26c:	1b ba       	out	0x1b, r1	; 27
-// 		UART_write16(cont);
-// 	}
-// }
+	// // 	UART_send(contnext);
+	// 	}
+	//////////////////////////////////////////////////////////////////////////
+	}
 
-	
 	SPI_write16(0x100);								//Reset AD9833 
      26e:	80 e0       	ldi	r24, 0x00	; 0
      270:	91 e0       	ldi	r25, 0x01	; 1
@@ -823,8 +823,8 @@ int main(void)
      49e:	00 00       	nop
      4a0:	c0 e8       	ldi	r28, 0x80	; 128
      4a2:	d0 e0       	ldi	r29, 0x00	; 0
-// 	
-//image data
+
+	//image data
 	for (int i=1;i<=128;i++)
 	{
 	//Sync Pulse
@@ -860,8 +860,8 @@ int main(void)
      4c6:	01 97       	sbiw	r24, 0x01	; 1
      4c8:	f1 f7       	brne	.-4      	; 0x4c6 <__LOCK_REGION_LENGTH__+0xc6>
      4ca:	00 00       	nop
-	_delay_ms(19);
-	_delay_us(841);
+	_delay_ms(19);	_delay_us(841);		//Time in protocol minus programming time of Set_AD9833()
+	
 	//Porch
 	Set_AD9833(1500,0);
      4cc:	40 e0       	ldi	r20, 0x00	; 0
@@ -892,14 +892,13 @@ int main(void)
      4e8:	9d e0       	ldi	r25, 0x0D	; 13
      4ea:	01 97       	sbiw	r24, 0x01	; 1
      4ec:	f1 f7       	brne	.-4      	; 0x4ea <__LOCK_REGION_LENGTH__+0xea>
-	_delay_ms(1);
-	_delay_us(921);
-
+	_delay_ms(1);	_delay_us(921);		//Time in protocol minus programming time of Set_AD9833()
+	
 	//Color transmission	
-	cont=0;	
+	cont=0;								// variable for maintaining count of pixels
      4ee:	10 92 a5 00 	sts	0x00A5, r1	; 0x8000a5 <cont+0x1>
      4f2:	10 92 a4 00 	sts	0x00A4, r1	; 0x8000a4 <cont>
-	global_frequency=freqY1;	
+	global_frequency=freqY1;			//initialization for first pixel
      4f6:	80 91 8a 00 	lds	r24, 0x008A	; 0x80008a <freqY1>
      4fa:	90 91 8b 00 	lds	r25, 0x008B	; 0x80008b <freqY1+0x1>
      4fe:	a0 91 8c 00 	lds	r26, 0x008C	; 0x80008c <freqY1+0x2>
@@ -908,7 +907,7 @@ int main(void)
      50a:	90 93 ab 00 	sts	0x00AB, r25	; 0x8000ab <global_frequency+0x1>
      50e:	a0 93 ac 00 	sts	0x00AC, r26	; 0x8000ac <global_frequency+0x2>
      512:	b0 93 ad 00 	sts	0x00AD, r27	; 0x8000ad <global_frequency+0x3>
-	sei();
+	sei();						
      516:	78 94       	sei
 	TCCR1B|=(1<<CS10)|(1<<WGM12);
      518:	8e b5       	in	r24, 0x2e	; 46
@@ -924,7 +923,7 @@ int main(void)
      528:	90 91 65 00 	lds	r25, 0x0065	; 0x800065 <TEMP+0x1>
      52c:	9b bd       	out	0x2b, r25	; 43
      52e:	8a bd       	out	0x2a, r24	; 42
-	while(cont<=1280);
+	while(cont<=1280);					// wait loop for interrupts  to complete
      530:	80 91 a4 00 	lds	r24, 0x00A4	; 0x8000a4 <cont>
      534:	90 91 a5 00 	lds	r25, 0x00A5	; 0x8000a5 <cont+0x1>
      538:	81 30       	cpi	r24, 0x01	; 1
@@ -939,18 +938,18 @@ int main(void)
 	TCCR1B=0x00;
      546:	1e bc       	out	0x2e, r1	; 46
      548:	21 97       	sbiw	r28, 0x01	; 1
+	_delay_ms(29);
 	_delay_us(839);
 	}
 
-// 	
-//image data
+	//image data
 	for (int i=1;i<=128;i++)
      54a:	09 f0       	breq	.+2      	; 0x54e <__LOCK_REGION_LENGTH__+0x14e>
      54c:	ab cf       	rjmp	.-170    	; 0x4a4 <__LOCK_REGION_LENGTH__+0xa4>
-// 		_delay_us(170079.41);
 
 }
-}	
+
+	}
 
     Set_AD9833(0x00,0);
      54e:	40 e0       	ldi	r20, 0x00	; 0
@@ -1156,7 +1155,7 @@ ISR(TIMER1_COMPA_vect)
 		}
 		
 	}
-	next_phase = getphase(prev_phase,prev_freq,532);
+	next_phase = getphase(prev_phase,prev_freq,532);		//calculation of phase to be added in new wave
      75e:	80 90 a6 00 	lds	r8, 0x00A6	; 0x8000a6 <prev_freq>
      762:	90 90 a7 00 	lds	r9, 0x00A7	; 0x8000a7 <prev_freq+0x1>
      766:	a0 90 a8 00 	lds	r10, 0x00A8	; 0x8000a8 <prev_freq+0x2>

@@ -63,8 +63,6 @@ Discarded input sections
  .text._Z3ledi  0x00000000       0x2e main.o
  .text._Z12UART_write16t
                 0x00000000       0x14 main.o
- .data.timeprev
-                0x00000000        0x4 main.o
  .bss.contnext  0x00000000        0x2 main.o
  .bss.contprev  0x00000000        0x2 main.o
  .bss.cont_copy
@@ -718,30 +716,30 @@ END GROUP
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x00000000     0x1574
+.debug_info     0x00000000     0x1560
  *(.debug_info .gnu.linkonce.wi.*)
  .debug_info    0x00000000      0x4e6 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5/crtatmega32.o
- .debug_info    0x000004e6     0x108e main.o
+ .debug_info    0x000004e6     0x107a main.o
 
 .debug_abbrev   0x00000000      0x778
  *(.debug_abbrev)
  .debug_abbrev  0x00000000      0x4a3 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5/crtatmega32.o
  .debug_abbrev  0x000004a3      0x2d5 main.o
 
-.debug_line     0x00000000      0x5c6
+.debug_line     0x00000000      0x5c4
  *(.debug_line .debug_line.* .debug_line_end)
  .debug_line    0x00000000       0x1a c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5/crtatmega32.o
- .debug_line    0x0000001a      0x5ac main.o
+ .debug_line    0x0000001a      0x5aa main.o
 
 .debug_frame    0x00000000      0x230
  *(.debug_frame)
  .debug_frame   0x00000000      0x230 main.o
 
-.debug_str      0x00000000      0x5a0
+.debug_str      0x00000000      0x597
  *(.debug_str)
  .debug_str     0x00000000      0x196 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5/crtatmega32.o
- .debug_str     0x00000196      0x40a main.o
-                                0x45d (size before relaxing)
+ .debug_str     0x00000196      0x401 main.o
+                                0x454 (size before relaxing)
 
 .debug_loc      0x00000000      0xf6a
  *(.debug_loc)

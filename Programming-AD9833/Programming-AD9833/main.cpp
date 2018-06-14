@@ -140,41 +140,8 @@ int main(void)
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs
 	TCCR1A=0;
 	PORTA=0;
-	
-// 	for(int i=1;i<5;i++)
-// 	{
-// 		j=i;
-// 	cont=0;
-// 	contnext=0;
-// 	contprev=0;
-// 	TCNT0=0;
-// 	sei();
-// 	TCCR1B|=(1<<CS10);
-// 	TIMSK|=(1<<OCIE1A);
-// 	TCNT1=0;
-// 	OCR1A=TEMP;
-// 	//TCNT1=65534;
-// 	do 
-// 	{
-// 		ATOMIC_BLOCK(ATOMIC_FORCEON)
-// 		{
-// 			cont_copy=cont;
-// 		}
-// 	} while (cont_copy<2);
-// 	cli();
-// 	TIMSK&=~(1<<OCR1A);
-// 	TCCR1B=0x00;
-// 	UART_send(contprev);
-// 	UART_send(contnext);
-// 	UART_send(j);
-// // 	UART_send(contprev);
-// // 	UART_send(contnext);
-// 	}
-	
 
-
-	
-		//test timer
+	//test timers
 	{
 	//////////////////////////////////////////////////////////////////////////						
 	// 	TCNT0=0;																													
@@ -186,21 +153,49 @@ int main(void)
 	// 	PORTA=0;
 	// 	UART_write16(cont);										
 	// 	//160.590278				
-	// 	//325.520833 us with phase correction											
+	// 	//325.520833 us with phase correction									
+	// 	TCCR1B|=(1<<CS10);
+	// 	for(int i=1;i<=10;i++)
+	// 	{
+	// 		TCNT1=0;
+	// 		//next_phase=getphase(prev_phase,2000,100000);
+	// 		Set_AD9833(2000,next_phase);
+	// 		cont=TCNT1 ;
+	// 		UART_write16(cont);
+	// 	}
+	// }		
+	// 	for(int i=1;i<5;i++)
+	// 	{
+	// 		j=i;
+	// 	cont=0;
+	// 	contnext=0;
+	// 	contprev=0;
+	// 	TCNT0=0;
+	// 	sei();
+	// 	TCCR1B|=(1<<CS10);
+	// 	TIMSK|=(1<<OCIE1A);
+	// 	TCNT1=0;
+	// 	OCR1A=TEMP;
+	// 	//TCNT1=65534;
+	// 	do
+	// 	{
+	// 		ATOMIC_BLOCK(ATOMIC_FORCEON)
+	// 		{
+	// 			cont_copy=cont;
+	// 		}
+	// 	} while (cont_copy<2);
+	// 	cli();
+	// 	TIMSK&=~(1<<OCR1A);
+	// 	TCCR1B=0x00;
+	// 	UART_send(contprev);
+	// 	UART_send(contnext);
+	// 	UART_send(j);
+	// // 	UART_send(contprev);
+	// // 	UART_send(contnext);
+	// 	}
 	//////////////////////////////////////////////////////////////////////////
 	}
-// 	TCCR1B|=(1<<CS10);	
-// 	for(int i=1;i<=10;i++)
-// 	{
-// 		TCNT1=0;
-// 		//next_phase=getphase(prev_phase,2000,100000);
-// 		Set_AD9833(2000,next_phase);
-// 		cont=TCNT1 ;
-// 		UART_write16(cont);
-// 	}
-// }
 
-	
 	SPI_write16(0x100);								//Reset AD9833 
 
 	//VIS Code
@@ -257,35 +252,35 @@ int main(void)
 	_delay_us(839);
 	}
 
-// 	
-//image data
+	//image data
 	for (int i=1;i<=128;i++)
 	{
 	//Sync Pulse
 	Set_AD9833(1200,0);
-	_delay_ms(19);
-	_delay_us(841);
+	_delay_ms(19);	_delay_us(841);		//Time in protocol minus programming time of Set_AD9833()
+	
 	//Porch
 	Set_AD9833(1500,0);
-	_delay_ms(1);
-	_delay_us(921);
-
+	_delay_ms(1);	_delay_us(921);		//Time in protocol minus programming time of Set_AD9833()
+	
 	//Color transmission	
-	cont=0;	
-	global_frequency=freqY1;	
-	sei();
+	cont=0;								// variable for maintaining count of pixels
+	global_frequency=freqY1;			//initialization for first pixel
+	sei();						
 	TCCR1B|=(1<<CS10)|(1<<WGM12);
 	TIMSK|=(1<<OCIE1A);
 	//TCNT1=65534;
 	OCR1A=TEMP;
-	while(cont<=1280);
+	while(cont<=1280);					// wait loop for interrupts  to complete
 	cli();
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
-// 	_delay_ms(4);
-// 	_delay_us(25);
+	//added delay for straightening image
+	// 	_delay_ms(4);
+	// 	_delay_us(25);
 
-{// 	
+	//color be delay 
+	{// 	
 
 
 // // 		//Y Scan odd line
@@ -333,7 +328,8 @@ int main(void)
 // 		_delay_us(170079.41);
 
 }
-}	
+
+	}
 
     Set_AD9833(0x00,0);
 
@@ -373,7 +369,7 @@ ISR(TIMER1_COMPA_vect)
 		}
 		
 	}
-	next_phase = getphase(prev_phase,prev_freq,532);
+	next_phase = getphase(prev_phase,prev_freq,532);		//calculation of phase to be added in new wave
 	cont++;
 	Set_AD9833(global_frequency,next_phase);
 	
