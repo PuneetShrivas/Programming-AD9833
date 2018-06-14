@@ -33,7 +33,6 @@ volatile unsigned int prev_phase=0;
 volatile unsigned int next_phase=0;
 volatile int contprev = 0;
 volatile int contnext = 0;
-volatile float timeprev = 1;
 volatile int t=0;
 void SPI_init(void)
 {
@@ -60,9 +59,9 @@ void led(int i)
 {
 	switch (i)
 	{
-		case 0 : PORTA|=(1<<PINA0);break;
-		case 1 : PORTA|=(1<<PINA1);break;
-		case 2 : PORTA|=(1<<PINA2);break;
+		case 0 : PORTA^=(1<<PINA0);break;
+		case 1 : PORTA^=(1<<PINA1);break;
+		case 2 : PORTA^=(1<<PINA2);break;
 	}
 }
 
@@ -121,18 +120,18 @@ float Y1 = 16.0 + (.003906 * ((65.738 * R1) + (129.057 * G1) + (25.064 * B1)));
 float RY1 = 128.0 + (.003906 * ((112.439 * R1) + (-94.154 * G1) + (-18.285 * B1)));
 float BY1 = 128.0 + (.003906 * ((-37.945 * R1) + (-74.494 * G1) + (112.439 * B1)));
 //frequency calculation and documented values
-volatile float freqY1  = 1628.62745; /*1500 + (Y1 * 3.1372549);*/			//1757.2549(red)	1954.90196(green)	1628.62745(blue)
-volatile float freqRY1 = 1845.09804;  /*1500 + (RY1 * 3.1372549);*/		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
-volatile float freqBY1 = 2252.94118; /*1500 + (BY1 * 3.1372549);*/		//1782.35294(red)	1669.41177(green)	2252.94118(blue)
+volatile float freqY1  =  1500 + (Y1 * 3.1372549);			//1757.2549(red)	1954.90196(green)	1628.62745(blue)
+volatile float freqRY1 =   1500 + (RY1 * 3.1372549);		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
+volatile float freqBY1 =  1500 + (BY1 * 3.1372549);		//1782.35294(red)	1669.41177(green)	2252.94118(blue)
 
 int R2=0,G2=255,B2=0;
 float Y2 = 16.0 + (.003906 * ((65.738 * R2) + (129.057 * G2) + (25.064 * B2)));
 float RY2 = 128.0 + (.003906 * ((112.439 * R2) + (-94.154 * G2) + (-18.285 * B2)));
 float BY2 = 128.0 + (.003906 * ((-37.945 * R2) + (-74.494 * G2) + (112.439 * B2)));
 //frequency calculation and documented values
-volatile float freqY2  = 1954.90196; /*1500 + (Y2 * 3.1372549);*/			//1757.2549(red)	1954.90196(green)	1628.62745(blue)
-volatile float freqRY2 = 1606.66667; /*1500 + (RY2 * 3.1372549);*/		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
-volatile float freqBY2 = 1669.41177; /*1500 + (BY2 * 3.1372549);*/		//1782.35294(red)	1669.41177(green)	2252.94118(blue)
+volatile float freqY2  =  1500 + (Y2  * 3.1372549);			//1757.2549(red)	1954.90196(green)	1628.62745(blue)
+volatile float freqRY2 =  1500 + (RY2 * 3.1372549);		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
+volatile float freqBY2 =  1500 + (BY2 * 3.1372549);		//1782.35294(red)	1669.41177(green)	2252.94118(blue)
 
 int main(void)
 {
@@ -141,7 +140,7 @@ int main(void)
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs
 	TCCR1A=0;
 	PORTA=0;
-	TCCR0=(1<<CS00)|(1<<CS01);
+	
 // 	for(int i=1;i<5;i++)
 // 	{
 // 		j=i;
@@ -175,7 +174,6 @@ int main(void)
 
 
 	
-/*	SPI_write16(0x100);*/
 		//test timer
 	{
 	//////////////////////////////////////////////////////////////////////////						
@@ -273,12 +271,7 @@ int main(void)
 	_delay_us(921);
 
 	//Color transmission	
-	//single color using interrupts
-// 	
-// 	{
-// 		
-	//Y Scan odd line
-	cont=1;	
+	cont=0;	
 	global_frequency=freqY1;	
 	sei();
 	TCCR1B|=(1<<CS10)|(1<<WGM12);
@@ -291,44 +284,10 @@ int main(void)
 	TCCR1B=0x00;
 // 	_delay_ms(4);
 // 	_delay_us(25);
+
 {// 	
-// // 	//R-Y Scan average
-// // 	cont=0;
-// // 	global_frequency=freqRY;
-// // 	sei();
-// // 	TCCR1B|=(1<<CS10);
-// // 	TIMSK|=(1<<TOIE1);
-// // 	TCNT1=TICKS;
-// // 	while(cont<320);
-// // 	cli();
-// // 	TIMSK&=~(1<<OCIE1A);
-// // 	TCCR1B=0x00;
-// // 	
-// // 	//B-Y Scan average
-// // 	cont=0;
-// // 	global_frequency=freqBY;
-// // 	sei();
-// // 	TCCR1B|=(1<<CS10);
-// // 	TIMSK|=(1<<TOIE1);
-// // 	TCNT1=TICKS;
-// // 	while(cont<320);
-// // 	cli();
-// // 	TIMSK&=~(1<<OCIE1A);
-// // 	TCCR1B=0x00;
-// // 	
-// // 	//Y Scan even line
-// // 	cont=0; 
-// // 	global_frequency=freqY;
-// // 	sei();
-// // 	TCCR1B|=(1<<CS10);
-// // 	TIMSK|=(1<<TOIE1);
-// // 	TCNT1=TICKS;
-// // 	while(cont<321);
-// // 	cli();
-// // 	TIMSK&=~(1<<OCIE1A);
-// // 	TCCR1B=0x00;
-// 	}
-// 	{
+
+
 // // 		//Y Scan odd line
 // // 		for (int j=1;j<=8;j++)
 // // 		{
@@ -372,60 +331,58 @@ int main(void)
 // 		//Y Scan even line
 // 		Set_AD9833(freqY1,0);
 // 		_delay_us(170079.41);
-// }
+
 }
 }	
+
     Set_AD9833(0x00,0);
 
 	while(1)
 	{		
 	}
+
 }
 
 ISR(TIMER1_COMPA_vect)
 {
 
-// 	timeprev = (contnext-contprev)*TIMER0_PRESCALER/F_CPU;
-	//TCNT1=TICKS;
-// 	contprev=contnext;
-// 	contnext=TCNT0;
-	//UART_send(contnext);
-	
-	
-
+//single color
 	 
 // 	if(cont==320) global_frequency = freqRY1;
 // 	else if(cont==640) global_frequency = freqBY1;
 // 	else if(cont==960) global_frequency = freqY1;
-// 	
+
+//pattern of 2 colors 	
+
 	if(((cont-1)%20)==0) 
 	{
 		t = (cont-1)/20;
 		if((t%2)==0)
 		{
-			if(t<15) global_frequency = 1628.62745;
-			else if(t<31) global_frequency = 1845.09804;
-			else if(t<47) global_frequency = 2252.94118;
-			else if(t<63) global_frequency = 1628.62745;
+			if(t<15) global_frequency = freqY1;
+			else if(t<31) global_frequency = freqRY1;
+			else if(t<47) global_frequency = freqBY1;
+			else if(t<63) global_frequency = freqY1;
 		}
 		else if((t%2)==1)
 		{
-			if(t<16) global_frequency = 1954.90196;
-			else if(t<32) global_frequency = 1606.66667;
-			else if(t<48) global_frequency = 1669.41177;
-			else if(t<64) global_frequency = 1954.90196;
+			if(t<16) global_frequency = freqY2;
+			else if(t<32) global_frequency = freqRY2;
+			else if(t<48) global_frequency = freqBY2;
+			else if(t<64) global_frequency = freqY2;
 		}
 		
 	}
 	next_phase = getphase(prev_phase,prev_freq,532);
 	cont++;
 	Set_AD9833(global_frequency,next_phase);
-	//UART_send(cont);
-// 	//add frequency retrieval function here
+	
 // 	if(prev_freq==global_frequency) ;
 // 	else {}
+	
  	prev_phase=next_phase;
 	prev_freq = global_frequency;
+	
 }
 	
  EMPTY_INTERRUPT(SPI_STC_vect) //to prevent reset on Empty SPI interrupt 
