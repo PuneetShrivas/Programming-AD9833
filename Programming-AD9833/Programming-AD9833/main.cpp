@@ -21,7 +21,7 @@
 #include <avr/interrupt.h>
 #include <util/atomic.h>
 
-int TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*559)-1);			//Counter Cycles for required time557
+int TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*560.5)-1);			//Counter Cycles for required time557
 int TICKS = 65535-TEMP;												//Value for TCNT1 to implement timing by overflow
 	
 volatile float global_frequency=0;										//Volatile global variables for use in interrupt service routine
@@ -33,6 +33,7 @@ volatile unsigned int next_phase=0;
 volatile int contprev = 0;
 volatile int contnext = 0;
 volatile int t=0;
+volatile int compare = 0;
 void SPI_init(void)
 {
 	DDRB=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);								//sets SCK, MOSI,SS and PINB0 as output (F sync at Pinb0)
@@ -102,7 +103,7 @@ void Set_AD9833(float frequency, unsigned int phase)
 	phase|=0xC000;
 	//SPI_write16(0xC000);								  //Mode selection for writing to phase register bit, selection of PHASE0 register (Needs to be fixed)
 	SPI_write16(phase);
-	SPI_write16(0x2000);                                                                                                                                                                                                                                                                                             
+	SPI_write16(0x2000);                                                                                                                                                                                                                                                                                
 }
 
 unsigned int getphase(float pphase,float freq, float time)
@@ -134,11 +135,11 @@ volatile float freqBY2 =  1500 + (BY2 * 3.1372549);		//1782.35294(red)	1669.4117
 
 int main(void)
 {
-// 	UART_init();
-// 	SPI_init();
-// 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs
-// 	TCCR1A=0;
-// 	PORTA=0;
+	UART_init();
+	SPI_init();
+	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs
+	TCCR1A=0;
+	PORTA=0;
 
 	//test timers
 	
@@ -250,8 +251,8 @@ int main(void)
 	
 	//Porch
 	Set_AD9833(1500,0);
-	_delay_ms(1);	_delay_us(920);		//Time in protocol minus programming time of Set_AD9833()
-	
+	_delay_ms(1);	_delay_us(919);		//Time in protocol minus programming time of Set_AD9833()
+
 	//Color transmission	
 	cont=1;								// variable for maintaining count of pixels
 	global_frequency=freqY1;			//initialization for first pixel
@@ -266,9 +267,10 @@ int main(void)
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
 	PORTA=0;
+	
 	//added delay for straightening image
-	// 	_delay_ms(4);
-	// 	_delay_us(25);
+// 	_delay_ms(1);
+// 	_delay_us(655);
 
 	//color be delay 
 	{// 	
@@ -319,12 +321,10 @@ int main(void)
 // 		_delay_us(170079.41);
 
 }
-led(1);
 
 	}
 
-    Set_AD9833(0x00,0);
-
+Set_AD9833(0x00,0);
 	while(1)
 	{		
 	}
@@ -333,48 +333,38 @@ led(1);
 
 ISR(TIMER1_COMPA_vect)
 {
-
 //single color	
-	 
-
 //pattern of 2 colors
-
-	Set_AD9833(global_frequency,next_phase);		
+	if(compare==0){Set_AD9833(global_frequency,next_phase);		}
 	prev_phase=next_phase;
 	prev_freq = global_frequency;	
-	if(cont==319) global_frequency = freqRY1;
-	else if(cont==639) global_frequency = freqBY1;
-	else if(cont==959) global_frequency = freqY1;
-	
-// 	if(((cont-1)%20)==0) 
-// 	{
-// 		t = (cont-1)/20;
-// 		if((t%2)==0)
-// 		{
-// 			if(t<15) global_frequency = freqY1;
-// 			else if(t<31) global_frequency = freqRY1;
-// 			else if(t<47) global_frequency = freqBY1;
-// 			else if(t<63) global_frequency = freqY1;
-// 		}
-// 		else if((t%2)==1)
-// 		{
-// 			if(t<16) global_frequency = freqY2;
-// 			else if(t<32) global_frequency = freqRY2;
-// 			else if(t<48) global_frequency = freqBY2;
-// 			else if(t<64) global_frequency = freqY2;
-// 		}
-// 		
-// 	}
-
+// 	if(cont==319) global_frequency = freqRY1;
+// 	else if(cont==639) global_frequency = freqBY1;
+// 	else if(cont==959) global_frequency = freqY1;
+	if(((cont-2)%20)==0) 
+	{
+		t = (cont-2)/20;
+		if((t%2)==0)
+		{
+			if(t<15) global_frequency = freqY1;
+			else if(t<31) global_frequency = freqRY1;
+			else if(t<47) global_frequency = freqBY1;
+			else if(t<63) global_frequency = freqY1;
+		}
+		else if((t%2)==1)
+		{
+			if(t<16) global_frequency = freqY2;
+			else if(t<32) global_frequency = freqRY2;
+			else if(t<48) global_frequency = freqBY2;
+			else if(t<64) global_frequency = freqY2;
+		}
+	}
 	next_phase = getphase(prev_phase,prev_freq,532);		//calculation of phase to be added in new wave
 	cont++;
-	
-	
+	if (global_frequency==prev_freq) compare=1;
+	else compare =0;
 // 	if(prev_freq==global_frequency) ;
 // 	else {}
-	
-
-	
 }
 	
  EMPTY_INTERRUPT(SPI_STC_vect) //to prevent reset on Empty SPI interrupt 
