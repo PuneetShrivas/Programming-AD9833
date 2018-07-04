@@ -34,6 +34,7 @@ volatile int contprev = 0;
 volatile int contnext = 0;
 volatile int t=0;
 volatile int compare = 0;
+volatile int notSet = 0;
 void SPI_init(void)
 {
 	DDRB=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);								//sets SCK, MOSI,SS and PINB0 as output (F sync at Pinb0)
@@ -115,7 +116,7 @@ unsigned int getphase(float pphase,float freq, float time)
 }
 
 //color conversion from RGB to Y/RY/BY
-int R1=255,G1=0,B1=0;
+int R1=0,G1=0,B1=0;
 float Y1 = 16.0 + (.003906 * ((65.738 * R1) + (129.057 * G1) + (25.064 * B1)));
 float RY1 = 128.0 + (.003906 * ((112.439 * R1) + (-94.154 * G1) + (-18.285 * B1)));
 float BY1 = 128.0 + (.003906 * ((-37.945 * R1) + (-74.494 * G1) + (112.439 * B1)));
@@ -124,7 +125,7 @@ volatile float freqY1  =  1500 + (Y1 * 3.1372549);			//1757.2549(red)	1954.90196
 volatile float freqRY1 =   1500 + (RY1 * 3.1372549);		//2252.94118(red)  1606.66667(green)	1845.09804(blue)
 volatile float freqBY1 =  1500 + (BY1 * 3.1372549);		//1782.35294(red)	1669.41177(green)	2252.94118(blue)
 
-int R2=0,G2=255,B2=0;
+int R2=255,G2=255,B2=255;
 float Y2 = 16.0 + (.003906 * ((65.738 * R2) + (129.057 * G2) + (25.064 * B2)));
 float RY2 = 128.0 + (.003906 * ((112.439 * R2) + (-94.154 * G2) + (-18.285 * B2)));
 float BY2 = 128.0 + (.003906 * ((-37.945 * R2) + (-74.494 * G2) + (112.439 * B2)));
@@ -199,143 +200,152 @@ int main(void)
 	SPI_write16(0x100);								//Reset AD9833 
 
 	//VIS Code
-	{//leader tone
-	_delay_ms(500);
-	Set_AD9833(1900,0);
-	_delay_ms(300);
-	//break
-	Set_AD9833(1200,0);
-	_delay_ms(10);
-	//leader
-	Set_AD9833(1900,0);
-	_delay_ms(300);
-	//VIS start bit
-	Set_AD9833(1200,0);
-	_delay_ms(29);	_delay_us(839);
-	//PD90 VIS code = 99d = 0b1100011
-	//bit 0=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 1=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 2=0
-	Set_AD9833(1300,0);
-	_delay_ms(29);  _delay_us(839);
-	//bit 3=0
-	Set_AD9833(1300,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 4=0
-	Set_AD9833(1300,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 5=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 6=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//Parity bit
-	Set_AD9833(1300,0);
-	_delay_ms(29);	_delay_us(839);
-	//stop bit
-	Set_AD9833(1200,0);
-	_delay_ms(29);	_delay_us(924);			
-	}
-
-	//image data
-	for (int i=1;i<=128;i++)
-	{
-	//Sync Pulse
-	Set_AD9833(1200,0);
-	_delay_ms(19);	_delay_us(840);		//Time in protocol minus programming time of Set_AD9833()
-	
-	//Porch
-	Set_AD9833(1500,0);
-	_delay_ms(1);	_delay_us(919);		//Time in protocol minus programming time of Set_AD9833()
-
-	//Color transmission	
-	cont=1;								// variable for maintaining count of pixels
-	global_frequency=freqY1;			//initialization for first pixel
-	sei();				
-	TCCR1B=0;		
-	TCCR1B|=(1<<CS10)|(1<<WGM12);
-	TIMSK|=(1<<OCIE1A);
-	OCR1A=TEMP;
-	TCNT1=TEMP-1; 
-	while(cont<=1280);					// wait loop for interrupts  to complete
-	cli();
-	TIMSK&=~(1<<OCIE1A);
-	TCCR1B=0x00;
-	PORTA=0;
-	
-	//added delay for straightening image
-// 	_delay_ms(1);
-// 	_delay_us(655);
-
-	//color be delay 
-	{// 	
-
-
-// // 		//Y Scan odd line
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(1757.2549);
-// // 			_delay_us(10479.409722); //532*20-160.590278
-// // 			Set_AD9833(1954.90196);
-// // 			 _delay_us(10479.409722);
-// // 		}
+// 	{//leader tone
+// 	_delay_ms(500);
+// 	Set_AD9833(1900,0);
+// 	_delay_ms(300);
+// 	//break
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(10);
+// 	//leader
+// 	Set_AD9833(1900,0);
+// 	_delay_ms(300);
+// 	//VIS start bit
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//PD90 VIS code = 99d = 0b1100011
+// 	//bit 0=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 1=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 2=0
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);  _delay_us(839);
+// 	//bit 3=0
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 4=0
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 5=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 6=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//Parity bit
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//stop bit
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(29);	_delay_us(839); 			
+// 	}
+// 
+// 	//image data
+// 	for (int i=1;i<=128;i++)
+// 	{
+// 	//Sync Pulse
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(19);	_delay_us(840);		//Time in protocol minus programming time of Set_AD9833()
+// 	
+// 	//Porch
+// 	Set_AD9833(1500,0);
+// 	_delay_ms(1);	_delay_us(919);		//Time in protocol minus programming time of Set_AD9833()
+// 
+// 	//Color transmission	
+// 	cont=1;								// variable for maintaining count of pixels
+// 	global_frequency=freqY1;			//initialization for first pixel
+// 	sei();				
+// 	TCCR1B=0;		
+// 	TCCR1B|=(1<<CS10)|(1<<WGM12);
+// 	TIMSK|=(1<<OCIE1A);
+// 	OCR1A=TEMP;
+// 	TCNT1=TEMP-1; 
+// 	while(cont<=1280);					// wait loop for interrupts  to complete
+// 	cli();
+// 	TIMSK&=~(1<<OCIE1A);
+// 	TCCR1B=0x00;
+// 	PORTA=0;
+// 	
+// 	//added delay for straightening image
+// // 	_delay_ms(1);
+// 	//_delay_us(100);
+// 
+// 	//color be delay 
+// 	{// 	
+// 
+// 
+// // // 		//Y Scan odd line
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(1757.2549);
+// // // 			_delay_us(10479.409722); //532*20-160.590278
+// // // 			Set_AD9833(1954.90196);
+// // // 			 _delay_us(10479.409722);
+// // // 		}
+// // // 		//R-Y Scan average
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(2252.94118);
+// // // 			 _delay_us(10479.409722);
+// // // 			Set_AD9833(1606.66667);
+// // // 			 _delay_us(10479.409722);
+// // // 		}
+// // // 		//B-Y Scan average
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(1782.35294); _delay_us(10479.409722);
+// // // 			Set_AD9833(1669.41177); _delay_us(10479.409722);
+// // // 		}
+// // // 		//Y Scan even line
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
+// // // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
+// // // 		}
+// 		//Y Scan odd line
+// // 		Set_AD9833(freqY1,0); 
+// // 		_delay_us(170079.41);
+// // 
 // // 		//R-Y Scan average
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(2252.94118);
-// // 			 _delay_us(10479.409722);
-// // 			Set_AD9833(1606.66667);
-// // 			 _delay_us(10479.409722);
-// // 		}
+// // 		Set_AD9833(freqRY1,0); 
+// // 		_delay_us(170079.41);
+// // 
 // // 		//B-Y Scan average
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(1782.35294); _delay_us(10479.409722);
-// // 			Set_AD9833(1669.41177); _delay_us(10479.409722);
-// // 		}
+// // 		Set_AD9833(freqBY1,0); 
+// // 		_delay_us(170079.41);
+// // 
 // // 		//Y Scan even line
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
-// // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
-// // 		}
-		//Y Scan odd line
-// 		Set_AD9833(freqY1,0); 
-// 		_delay_us(170079.41);
+// // 		Set_AD9833(freqY1,0);
+// // 		_delay_us(170079.41);
 // 
-// 		//R-Y Scan average
-// 		Set_AD9833(freqRY1,0); 
-// 		_delay_us(170079.41);
+// }
 // 
-// 		//B-Y Scan average
-// 		Set_AD9833(freqBY1,0); 
-// 		_delay_us(170079.41);
+// 	}
 // 
-// 		//Y Scan even line
-// 		Set_AD9833(freqY1,0);
-// 		_delay_us(170079.41);
-
-}
-
-	}
-
-Set_AD9833(0x00,0);
+// Set_AD9833(0x00,0);
+Set_AD9833(2300,0);
 	while(1)
-	{		
+	{
+	
 	}
 
 }
 
 ISR(TIMER1_COMPA_vect)
 {
-//single color	
-//pattern of 2 colors
-	if(compare==0){Set_AD9833(global_frequency,next_phase);		}
+	if(compare==0)
+	{
+		Set_AD9833(global_frequency,next_phase);
+		notSet=0;
+	}
+	else
+	{
+		notSet++;
+	}
+//	Set_AD9833(global_frequency,next_phase);	          
 	prev_phase=next_phase;
 	prev_freq = global_frequency;	
 // 	if(cont==319) global_frequency = freqRY1;
@@ -359,12 +369,12 @@ ISR(TIMER1_COMPA_vect)
 			else if(t<64) global_frequency = freqY2;
 		}
 	}
-	next_phase = getphase(prev_phase,prev_freq,532);		//calculation of phase to be added in new wave
+	next_phase = getphase(prev_phase,prev_freq,(532*notSet));		//calculation of phase to be added in new wave
 	cont++;
 	if (global_frequency==prev_freq) compare=1;
 	else compare =0;
-// 	if(prev_freq==global_frequency) ;
-// 	else {}
+	if (cont==1280) compare=0;
+
 }
 	
  EMPTY_INTERRUPT(SPI_STC_vect) //to prevent reset on Empty SPI interrupt 
