@@ -141,7 +141,7 @@ int main(void)
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs
 	TCCR1A=0;
 	PORTA=0;
-
+	UART_send('a');
 	//test timers
 	
 	//////////////////////////////////////////////////////////////////////////						

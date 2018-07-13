@@ -387,22 +387,56 @@ void UART_send(unsigned char data)
 	while(!(UCSRA & (1<<UDRE)));										//wait for buffer to be emptied
 	UDR=data;
 }
-
-int main(void)
+unsigned char UART_Receive( void )
 {
+	/* Wait for data to be received */
+	while ( !(UCSRA & (1<<RXC)) )
+	;
+	/* Get and return received data from buffer */
+	return UDR;
+}
+void UART_write16(unsigned short data)
+{
+	unsigned char MSdata = ((data>>8) & 0x00FF);  	//filter out MS
+	unsigned char LSdata = (data & 0x00FF);			//filter out LS
+	UART_send(MSdata);
+	UART_send(LSdata);
+}
+int main(void)
+{	
 	ioinit();
-	uint8_t byte[2], output[2]; 
-	byte[0]=0x01; byte[1]=0x02;
-	output[0]=0; output[1]=0;
-	int check1=0,check2=0;
-	check1 = eeprom_write_bytes(eeprom_addr, 2, byte);
-	check2 = eeprom_read_bytes(eeprom_addr,2, output);
 	UART_init();
-	UART_send(output[0]);
-	UART_send(output[1]);
-    /* Replace with your application code */
+	uint8_t byte[2], output[2]; 
+	int count=0;
+	byte[0]=0; byte[1]=0;
+	TCCR1B|=(1<<CS10);
+	//TCNT1=0;
+	eeprom_read_bytes(eeprom_addr, 1 ,  byte);
+	count = TCNT1;
+	UART_write16(count);
+	//byte[0]=0x07; byte[1]=0x11;
+// for (int i=0;i<81920;i++)
+// {
+// 	output[0]=0; output[1]=0;
+// 	int check1=0,check2=0;
+// 	int data=0;
+// 	byte[0] =UART_Receive();
+// 	byte[1] =UART_Receive();
+// 	check1 = eeprom_write_bytes(eeprom_addr+(i*2), 2, byte);
+// 	check2 = eeprom_read_bytes(eeprom_addr+(i*2),2, output);
+// 	data|=(output[0]<<8);
+// 	data|=output[1];	
+// 	UART_write16(data);
+// }
+//  	UART_send(output[0]);
+//  	UART_send(output[1]);
+// 	 UART_send(byte[0]);
+// 	 UART_send(byte[1]);
+//     //UART_send('a');
+	/* Replace with your application code */
     while (1) 
     {
+
     }
 }
 
