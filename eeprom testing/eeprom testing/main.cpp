@@ -8,7 +8,7 @@
 #include <avr/io.h>
 #include <util/twi.h>
 #include <stdlib.h>
-#define I2C_BAUD 100000UL 
+#define I2C_BAUD 500000UL 
 #define F_CPU 14745600
 #define Prescaler 1
 #define BAUDRATE 9600			  //Baud rate for UART
@@ -408,26 +408,29 @@ int main(void)
 	UART_init();
 	uint8_t byte[2], output[2]; 
 	int count=0;
-	byte[0]=0; byte[1]=0;
-	TCCR1B|=(1<<CS10);
-	//TCNT1=0;
-	eeprom_read_bytes(eeprom_addr, 1 ,  byte);
-	count = TCNT1;
-	UART_write16(count);
+	byte[0]=28; byte[1]=26;
+// 	TCCR1B|=(1<<CS10);
+// 	TCNT1=0;
+// 	int a = eeprom_read_bytes(eeprom_addr, 1 , byte);
+// 	count = TCNT1;
+// 	UART_write16(count);
 	//byte[0]=0x07; byte[1]=0x11;
-// for (int i=0;i<81920;i++)
-// {
-// 	output[0]=0; output[1]=0;
-// 	int check1=0,check2=0;
-// 	int data=0;
-// 	byte[0] =UART_Receive();
-// 	byte[1] =UART_Receive();
-// 	check1 = eeprom_write_bytes(eeprom_addr+(i*2), 2, byte);
-// 	check2 = eeprom_read_bytes(eeprom_addr+(i*2),2, output);
-// 	data|=(output[0]<<8);
-// 	data|=output[1];	
-// 	UART_write16(data);
-// }
+for (int i=0;i<5;i++)
+{
+	int check1=0;
+// 	byte[0]=UART_Receive();
+// 	byte[1]=UART_Receive();
+	check1 = eeprom_write_bytes(eeprom_addr+(i*2), 2, byte);
+}
+for ( int i=0; i<5;i++)
+{
+	output[0]=0; output[1]=0;
+	int data=0;
+	int check2 = eeprom_read_bytes(eeprom_addr+(i*2),2, output);
+	data|=(output[0]<<8);
+	data|=output[1];
+	UART_write16(data);
+}
 //  	UART_send(output[0]);
 //  	UART_send(output[1]);
 // 	 UART_send(byte[0]);

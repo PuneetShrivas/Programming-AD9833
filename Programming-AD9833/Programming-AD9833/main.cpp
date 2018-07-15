@@ -15,19 +15,32 @@
 #define TIMER1_PRESCALER 1
 #define TIMER0_PRESCALER 0
 #define PI 3.14159
+#define I2C_BAUD 100000UL 
+#define Prescaler 1
+#define MAX_ADDR 131072
+#define HALF_ADDR 65536
+//#define _BV(bit) (1<<(bit))
+#define MAX_ITER	200
+#define PAGE_SIZE 128
+#include <stdlib.h>
+#include <util/twi.h>
 #include <avr/io.h>
 #include <util/delay.h>
 #include <math.h>
 #include <avr/interrupt.h>
 #include <util/atomic.h>
+uint8_t twst;
+static uint8_t eeprom_addr = 0b10100110;	/* E2 E1 E0 = 0 0 0 */
+
 
 int TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*560.5)-1);			//Counter Cycles for required time557
 int TICKS = 65535-TEMP;												//Value for TCNT1 to implement timing by overflow
 	
-volatile float global_frequency=0;										//Volatile global variables for use in interrupt service routine
+volatile int global_frequency=0;										//Volatile global variables for use in interrupt service routine
 volatile float prev_freq = 0;
 volatile int cont=0;
 int cont_copy=0;
+int i=1;
 volatile unsigned int prev_phase=0;
 volatile unsigned int next_phase=0;
 volatile int contprev = 0;
@@ -35,6 +48,205 @@ volatile int contnext = 0;
 volatile int t=0;
 volatile int compare = 0;
 volatile int notSet = 0;
+volatile uint8_t byte[2];
+void ioinit(void)
+{
+
+	/* initialize TWI clock: 100 kHz clock, TWPS = 0 => prescaler = 1 */
+	#if defined(TWPS0)
+	/* has prescaler (mega128 & newer) */
+	TWSR = 0;
+	#endif
+
+	#if F_CPU < 3600000UL
+	TWBR = 10;			/* smallest TWBR value, see note [5] */
+	#else
+	TWBR = (F_CPU / I2C_BAUD - 16) / (2*Prescaler);
+	#endif
+}
+
+int eeprom_read_bytes_part(uint32_t eeaddr, int len, volatile uint8_t  *buf)
+{
+  uint8_t sla, twcr, n = 0;
+  int rv = 0;
+  
+  ///* Added code for handling the two halves of the EEPROM
+  if(eeaddr >= HALF_ADDR)
+  {
+    eeaddr -= HALF_ADDR;
+    eeprom_addr |= 0x08;
+  }
+  else
+  {
+    eeprom_addr &= ~0x08;
+  }
+  
+  /* patch high bits of EEPROM address into SLA */
+  sla = eeprom_addr;
+
+  /*
+   * Note [8]
+   * First cycle: master transmitter mode
+   */
+ restart:
+  if (n++ >= MAX_ITER)
+    return -1;
+ begin:
+
+  TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN); /* send start condition */
+  while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+  switch ((twst = TW_STATUS))
+    {
+    case TW_REP_START:		/* OK, but should not happen */
+    case TW_START:
+      break;
+
+    case TW_MT_ARB_LOST:	/* Note [9] */
+      goto begin;
+
+    default:
+      return -1;		/* error: not in start condition */
+      /* NB: do /not/ send stop condition */
+    }
+
+  /* Note [10] */
+  /* send SLA+W */
+  TWDR = sla | TW_WRITE;
+  TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+  while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+  switch ((twst = TW_STATUS))
+    {
+    case TW_MT_SLA_ACK:
+      break;
+
+    case TW_MT_SLA_NACK:	/* nack during select: device busy writing */
+      /* Note [11] */
+      goto restart;
+
+    case TW_MT_ARB_LOST:	/* re-arbitrate */
+      goto begin;
+
+    default:
+      goto error;		/* must send stop condition */
+    }
+
+  TWDR = (eeaddr>>8);		/* high 8 bits of addr */
+  TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+  while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+  switch ((twst = TW_STATUS))
+    {
+    case TW_MT_DATA_ACK:
+      break;
+
+    case TW_MT_DATA_NACK:
+
+    case TW_MT_ARB_LOST:
+      goto begin;
+
+    default:
+      goto error;		/* must send stop condition */
+    }
+
+  TWDR = eeaddr;		/* low 8 bits of addr */
+  TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+  while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+  switch ((twst = TW_STATUS))
+    {
+    case TW_MT_DATA_ACK:
+      break;
+
+    case TW_MT_DATA_NACK:
+      goto quit;
+
+    case TW_MT_ARB_LOST:
+      goto begin;
+
+    default:
+      goto error;		/* must send stop condition */
+    }
+
+  /*
+   * Note [12]
+   * Next cycle(s): master receiver mode
+   */
+  TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN); /* send (rep.) start condition */
+  while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+  switch ((twst = TW_STATUS))
+    {
+    case TW_START:		/* OK, but should not happen */
+    case TW_REP_START:
+      break;
+
+    case TW_MT_ARB_LOST:
+      goto begin;
+
+    default:
+      goto error;
+    }
+
+  /* send SLA+R */
+  TWDR = sla | TW_READ;
+  TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+  while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+  switch ((twst = TW_STATUS))
+    {
+    case TW_MR_SLA_ACK:
+      break;
+
+    case TW_MR_SLA_NACK:
+      goto quit;
+
+    case TW_MR_ARB_LOST:
+      goto begin;
+
+    default:
+      goto error;
+    }
+
+  for (twcr = _BV(TWINT) | _BV(TWEN) | _BV(TWEA);	len > 0;len--)
+    {
+      if (len == 1)
+	twcr = _BV(TWINT) | _BV(TWEN); /* send NAK this time */
+      TWCR = twcr;		/* clear int to start transmission */
+      while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+      switch ((twst = TW_STATUS))
+	{
+	case TW_MR_DATA_NACK:
+	  len = 0;		/* force end of loop */
+				/* FALLTHROUGH */
+	case TW_MR_DATA_ACK:
+	  *buf++ = TWDR;
+	  rv++;
+	  break;
+
+	default:
+	  goto error;
+	}
+    }
+ quit:
+  /* Note [14] */
+  TWCR = _BV(TWINT) | _BV(TWSTO) | _BV(TWEN); /* send stop condition */
+
+  return rv;
+
+ error:
+  rv = -1;
+  goto quit;
+}
+
+int eeprom_read_bytes(uint32_t eeaddr, int len, volatile uint8_t *buf)
+{
+	if((eeaddr < HALF_ADDR) && ((eeaddr + len) > HALF_ADDR))
+	{
+		int first = HALF_ADDR - eeaddr;
+		eeprom_read_bytes_part(eeaddr, first, buf);
+		return eeprom_read_bytes_part(HALF_ADDR, len - first , buf + first);
+	}
+	
+	return eeprom_read_bytes_part(eeaddr, len, buf);
+}
+
+
 void SPI_init(void)
 {
 	DDRB=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);								//sets SCK, MOSI,SS and PINB0 as output (F sync at Pinb0)
@@ -141,7 +353,7 @@ int main(void)
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs
 	TCCR1A=0;
 	PORTA=0;
-	UART_send('a');
+	ioinit();
 	//test timers
 	
 	//////////////////////////////////////////////////////////////////////////						
@@ -200,138 +412,132 @@ int main(void)
 	SPI_write16(0x100);								//Reset AD9833 
 
 	//VIS Code
-// 	{//leader tone
-// 	_delay_ms(500);
-// 	Set_AD9833(1900,0);
-// 	_delay_ms(300);
-// 	//break
-// 	Set_AD9833(1200,0);
-// 	_delay_ms(10);
-// 	//leader
-// 	Set_AD9833(1900,0);
-// 	_delay_ms(300);
-// 	//VIS start bit
-// 	Set_AD9833(1200,0);
-// 	_delay_ms(29);	_delay_us(839);
-// 	//PD90 VIS code = 99d = 0b1100011
-// 	//bit 0=1
-// 	Set_AD9833(1100,0);
-// 	_delay_ms(29);	_delay_us(839);
-// 	//bit 1=1
-// 	Set_AD9833(1100,0);
-// 	_delay_ms(29);	_delay_us(839);
-// 	//bit 2=0
-// 	Set_AD9833(1300,0);
-// 	_delay_ms(29);  _delay_us(839);
-// 	//bit 3=0
-// 	Set_AD9833(1300,0);
-// 	_delay_ms(29);	_delay_us(839);
-// 	//bit 4=0
-// 	Set_AD9833(1300,0);
-// 	_delay_ms(29);	_delay_us(839);
-// 	//bit 5=1
-// 	Set_AD9833(1100,0);
-// 	_delay_ms(29);	_delay_us(839);
-// 	//bit 6=1
-// 	Set_AD9833(1100,0);
-// 	_delay_ms(29);	_delay_us(839);
-// 	//Parity bit
-// 	Set_AD9833(1300,0);
-// 	_delay_ms(29);	_delay_us(839);
-// 	//stop bit
-// 	Set_AD9833(1200,0);
-// 	_delay_ms(29);	_delay_us(839); 			
-// 	}
-// 
-// 	//image data
-// 	for (int i=1;i<=128;i++)
-// 	{
-// 	//Sync Pulse
-// 	Set_AD9833(1200,0);
-// 	_delay_ms(19);	_delay_us(840);		//Time in protocol minus programming time of Set_AD9833()
-// 	
-// 	//Porch
-// 	Set_AD9833(1500,0);
-// 	_delay_ms(1);	_delay_us(919);		//Time in protocol minus programming time of Set_AD9833()
-// 
-// 	//Color transmission	
-// 	cont=1;								// variable for maintaining count of pixels
-// 	global_frequency=freqY1;			//initialization for first pixel
-// 	sei();				
-// 	TCCR1B=0;		
-// 	TCCR1B|=(1<<CS10)|(1<<WGM12);
-// 	TIMSK|=(1<<OCIE1A);
-// 	OCR1A=TEMP;
-// 	TCNT1=TEMP-1; 
-// 	while(cont<=1280);					// wait loop for interrupts  to complete
-// 	cli();
-// 	TIMSK&=~(1<<OCIE1A);
-// 	TCCR1B=0x00;
-// 	PORTA=0;
-// 	
-// 	//added delay for straightening image
-// // 	_delay_ms(1);
-// 	//_delay_us(100);
-// 
-// 	//color be delay 
-// 	{// 	
-// 
-// 
-// // // 		//Y Scan odd line
-// // // 		for (int j=1;j<=8;j++)
-// // // 		{
-// // // 			Set_AD9833(1757.2549);
-// // // 			_delay_us(10479.409722); //532*20-160.590278
-// // // 			Set_AD9833(1954.90196);
-// // // 			 _delay_us(10479.409722);
-// // // 		}
-// // // 		//R-Y Scan average
-// // // 		for (int j=1;j<=8;j++)
-// // // 		{
-// // // 			Set_AD9833(2252.94118);
-// // // 			 _delay_us(10479.409722);
-// // // 			Set_AD9833(1606.66667);
-// // // 			 _delay_us(10479.409722);
-// // // 		}
-// // // 		//B-Y Scan average
-// // // 		for (int j=1;j<=8;j++)
-// // // 		{
-// // // 			Set_AD9833(1782.35294); _delay_us(10479.409722);
-// // // 			Set_AD9833(1669.41177); _delay_us(10479.409722);
-// // // 		}
-// // // 		//Y Scan even line
-// // // 		for (int j=1;j<=8;j++)
-// // // 		{
-// // // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
-// // // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
-// // // 		}
-// 		//Y Scan odd line
-// // 		Set_AD9833(freqY1,0); 
-// // 		_delay_us(170079.41);
-// // 
-// // 		//R-Y Scan average
-// // 		Set_AD9833(freqRY1,0); 
-// // 		_delay_us(170079.41);
-// // 
-// // 		//B-Y Scan average
-// // 		Set_AD9833(freqBY1,0); 
-// // 		_delay_us(170079.41);
-// // 
-// // 		//Y Scan even line
-// // 		Set_AD9833(freqY1,0);
-// // 		_delay_us(170079.41);
-// 
-// }
-// 
-// 	}
-// 
-// Set_AD9833(0x00,0);
-Set_AD9833(2300,0);
-	while(1)
-	{
-	
+	{//leader tone
+	_delay_ms(500);
+	Set_AD9833(1900,0);
+	_delay_ms(300);
+	//break
+	Set_AD9833(1200,0);
+	_delay_ms(10);
+	//leader
+	Set_AD9833(1900,0);
+	_delay_ms(300);
+	//VIS start bit
+	Set_AD9833(1200,0);
+	_delay_ms(29);	_delay_us(839);
+	//PD90 VIS code = 99d = 0b1100011
+	//bit 0=1
+	Set_AD9833(1100,0);
+	_delay_ms(29);	_delay_us(839);
+	//bit 1=1
+	Set_AD9833(1100,0);
+	_delay_ms(29);	_delay_us(839);
+	//bit 2=0
+	Set_AD9833(1300,0);
+	_delay_ms(29);  _delay_us(839);
+	//bit 3=0
+	Set_AD9833(1300,0);
+	_delay_ms(29);	_delay_us(839);
+	//bit 4=0
+	Set_AD9833(1300,0);
+	_delay_ms(29);	_delay_us(839);
+	//bit 5=1
+	Set_AD9833(1100,0);
+	_delay_ms(29);	_delay_us(839);
+	//bit 6=1
+	Set_AD9833(1100,0);
+	_delay_ms(29);	_delay_us(839);
+	//Parity bit
+	Set_AD9833(1300,0);
+	_delay_ms(29);	_delay_us(839);
+	//stop bit
+	Set_AD9833(1200,0);
+	_delay_ms(29);	_delay_us(839); 			
 	}
 
+	//image data
+	for (int i=1;i<=128;i++)
+	{
+	//Sync Pulse
+	Set_AD9833(1200,0);
+	_delay_ms(19);	_delay_us(840);		//Time in protocol minus programming time of Set_AD9833()
+	
+	//Porch
+	Set_AD9833(1500,0);
+	_delay_ms(1);	_delay_us(919);		//Time in protocol minus programming time of Set_AD9833()
+
+	//Color transmission	
+	cont=1;								// variable for maintaining count of pixels
+	global_frequency=freqY1;			//initialization for first pixel
+	sei();				
+	TCCR1B=0;		
+	TCCR1B|=(1<<CS10)|(1<<WGM12);
+	TIMSK|=(1<<OCIE1A);
+	OCR1A=TEMP;
+	TCNT1=TEMP-1; 
+	while(cont<=1280);					// wait loop for interrupts  to complete
+	cli();
+	TIMSK&=~(1<<OCIE1A);
+	TCCR1B=0x00;
+	PORTA=0;
+	
+	//added delay for straightening image
+// 	_delay_ms(1);
+	//_delay_us(100);
+
+	//color be delay 
+	{// 	
+
+
+// // 		//Y Scan odd line
+// // 		for (int j=1;j<=8;j++)
+// // 		{
+// // 			Set_AD9833(1757.2549);
+// // 			_delay_us(10479.409722); //532*20-160.590278
+// // 			Set_AD9833(1954.90196);
+// // 			 _delay_us(10479.409722);
+// // 		}
+// // 		//R-Y Scan average
+// // 		for (int j=1;j<=8;j++)
+// // 		{
+// // 			Set_AD9833(2252.94118);
+// // 			 _delay_us(10479.409722);
+// // 			Set_AD9833(1606.66667);
+// // 			 _delay_us(10479.409722);
+// // 		}
+// // 		//B-Y Scan average
+// // 		for (int j=1;j<=8;j++)
+// // 		{
+// // 			Set_AD9833(1782.35294); _delay_us(10479.409722);
+// // 			Set_AD9833(1669.41177); _delay_us(10479.409722);
+// // 		}
+// // 		//Y Scan even line
+// // 		for (int j=1;j<=8;j++)
+// // 		{
+// // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
+// // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
+// // 		}
+		//Y Scan odd line
+// 		Set_AD9833(freqY1,0); 
+// 		_delay_us(170079.41);
+// 
+// 		//R-Y Scan average
+// 		Set_AD9833(freqRY1,0); 
+// 		_delay_us(170079.41);
+// 
+// 		//B-Y Scan average
+// 		Set_AD9833(freqBY1,0); 
+// 		_delay_us(170079.41);
+// 
+// 		//Y Scan even line
+// 		Set_AD9833(freqY1,0);
+// 		_delay_us(170079.41);
+
+}
+
+	}
+
+Set_AD9833(0x00,0);
 }
 
 ISR(TIMER1_COMPA_vect)
@@ -351,30 +557,33 @@ ISR(TIMER1_COMPA_vect)
 // 	if(cont==319) global_frequency = freqRY1;
 // 	else if(cont==639) global_frequency = freqBY1;
 // 	else if(cont==959) global_frequency = freqY1;
-	if(((cont-2)%20)==0) 
-	{
-		t = (cont-2)/20;
-		if((t%2)==0)
-		{
-			if(t<15) global_frequency = freqY1;
-			else if(t<31) global_frequency = freqRY1;
-			else if(t<47) global_frequency = freqBY1;
-			else if(t<63) global_frequency = freqY1;
-		}
-		else if((t%2)==1)
-		{
-			if(t<16) global_frequency = freqY2;
-			else if(t<32) global_frequency = freqRY2;
-			else if(t<48) global_frequency = freqBY2;
-			else if(t<64) global_frequency = freqY2;
-		}
-	}
+	global_frequency=0;
+	eeprom_read_bytes(eeprom_addr+((i-1)*1280)+((cont-1)*2),2,byte);
+	global_frequency|=(byte[0]<<8);
+	global_frequency|=byte[1];
+// 	if(((cont-2)%20)==0) 
+// 	{
+// 		t = (cont-2)/20;
+// 		if((t%2)==0)
+// 		{
+// 			if(t<15) global_frequency = freqY1;
+// 			else if(t<31) global_frequency = freqRY1;
+// 			else if(t<47) global_frequency = freqBY1;
+// 			else if(t<63) global_frequency = freqY1;
+// 		}
+// 		else if((t%2)==1)
+// 		{
+// 			if(t<16) global_frequency = freqY2;
+// 			else if(t<32) global_frequency = freqRY2;
+// 			else if(t<48) global_frequency = freqBY2;
+// 			else if(t<64) global_frequency = freqY2;
+// 		}
+// 	}
 	next_phase = getphase(prev_phase,prev_freq,(532*notSet));		//calculation of phase to be added in new wave
 	cont++;
 	if (global_frequency==prev_freq) compare=1;
 	else compare =0;
 	if (cont==1280) compare=0;
-
 }
 	
  EMPTY_INTERRUPT(SPI_STC_vect) //to prevent reset on Empty SPI interrupt 

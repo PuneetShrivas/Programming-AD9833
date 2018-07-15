@@ -3,31 +3,31 @@ eeprom testing.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         00000342  00000000  00000000  00000094  2**1
+  0 .text         00000580  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000002  00800060  00000342  000003d6  2**0
+  1 .data         00000002  00800060  00000580  00000614  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .bss          00000001  00800062  00800062  000003d8  2**0
+  2 .bss          00000001  00800062  00800062  00000616  2**0
                   ALLOC
-  3 .comment      00000030  00000000  00000000  000003d8  2**0
+  3 .comment      00000030  00000000  00000000  00000616  2**0
                   CONTENTS, READONLY
-  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000408  2**2
+  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000648  2**2
                   CONTENTS, READONLY
-  5 .debug_aranges 00000070  00000000  00000000  00000444  2**0
+  5 .debug_aranges 00000070  00000000  00000000  00000684  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_info   00000a6d  00000000  00000000  000004b4  2**0
+  6 .debug_info   00000b00  00000000  00000000  000006f4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_abbrev 0000072e  00000000  00000000  00000f21  2**0
+  7 .debug_abbrev 00000753  00000000  00000000  000011f4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_line   000005f8  00000000  00000000  0000164f  2**0
+  8 .debug_line   0000061c  00000000  00000000  00001947  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_frame  00000180  00000000  00000000  00001c48  2**2
+  9 .debug_frame  00000180  00000000  00000000  00001f64  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    00000506  00000000  00000000  00001dc8  2**0
+ 10 .debug_str    00000514  00000000  00000000  000020e4  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    000008d2  00000000  00000000  000022ce  2**0
+ 11 .debug_loc    00000906  00000000  00000000  000025f8  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000060  00000000  00000000  00002ba0  2**0
+ 12 .debug_ranges 00000060  00000000  00000000  00002efe  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -67,8 +67,8 @@ Disassembly of section .text:
   60:	10 e0       	ldi	r17, 0x00	; 0
   62:	a0 e6       	ldi	r26, 0x60	; 96
   64:	b0 e0       	ldi	r27, 0x00	; 0
-  66:	e2 e4       	ldi	r30, 0x42	; 66
-  68:	f3 e0       	ldi	r31, 0x03	; 3
+  66:	e0 e8       	ldi	r30, 0x80	; 128
+  68:	f5 e0       	ldi	r31, 0x05	; 5
   6a:	02 c0       	rjmp	.+4      	; 0x70 <__do_copy_data+0x10>
   6c:	05 90       	lpm	r0, Z+
   6e:	0d 92       	st	X+, r0
@@ -89,8 +89,8 @@ Disassembly of section .text:
   80:	a3 36       	cpi	r26, 0x63	; 99
   82:	b2 07       	cpc	r27, r18
   84:	e1 f7       	brne	.-8      	; 0x7e <.do_clear_bss_loop>
-  86:	0e 94 80 01 	call	0x300	; 0x300 <main>
-  8a:	0c 94 9f 01 	jmp	0x33e	; 0x33e <_exit>
+  86:	0e 94 77 02 	call	0x4ee	; 0x4ee <main>
+  8a:	0c 94 be 02 	jmp	0x57c	; 0x57c <_exit>
 
 0000008e <__bad_interrupt>:
   8e:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
@@ -103,7 +103,7 @@ Disassembly of section .text:
 	return UDR;
 }
   92:	11 b8       	out	0x01, r1	; 1
-  94:	81 e4       	ldi	r24, 0x41	; 65
+  94:	86 e0       	ldi	r24, 0x06	; 6
   96:	80 b9       	out	0x00, r24	; 0
   98:	08 95       	ret
 
@@ -311,151 +311,453 @@ Disassembly of section .text:
  242:	ef 90       	pop	r14
  244:	08 95       	ret
 
-00000246 <_Z17eeprom_read_bytesmiPh>:
- 246:	af 92       	push	r10
- 248:	bf 92       	push	r11
- 24a:	cf 92       	push	r12
- 24c:	df 92       	push	r13
- 24e:	ef 92       	push	r14
- 250:	ff 92       	push	r15
- 252:	0f 93       	push	r16
- 254:	1f 93       	push	r17
- 256:	cf 93       	push	r28
- 258:	df 93       	push	r29
- 25a:	6b 01       	movw	r12, r22
- 25c:	7c 01       	movw	r14, r24
- 25e:	ea 01       	movw	r28, r20
- 260:	89 01       	movw	r16, r18
- 262:	61 15       	cp	r22, r1
- 264:	71 05       	cpc	r23, r1
- 266:	81 40       	sbci	r24, 0x01	; 1
- 268:	91 05       	cpc	r25, r1
- 26a:	18 f5       	brcc	.+70     	; 0x2b2 <_Z17eeprom_read_bytesmiPh+0x6c>
- 26c:	ca 01       	movw	r24, r20
- 26e:	55 0f       	add	r21, r21
- 270:	aa 0b       	sbc	r26, r26
- 272:	bb 0b       	sbc	r27, r27
- 274:	8c 0d       	add	r24, r12
- 276:	9d 1d       	adc	r25, r13
- 278:	ae 1d       	adc	r26, r14
- 27a:	bf 1d       	adc	r27, r15
- 27c:	01 97       	sbiw	r24, 0x01	; 1
- 27e:	a1 40       	sbci	r26, 0x01	; 1
- 280:	b1 05       	cpc	r27, r1
- 282:	b8 f0       	brcs	.+46     	; 0x2b2 <_Z17eeprom_read_bytesmiPh+0x6c>
- 284:	aa 24       	eor	r10, r10
- 286:	bb 24       	eor	r11, r11
- 288:	ac 18       	sub	r10, r12
- 28a:	bd 08       	sbc	r11, r13
- 28c:	98 01       	movw	r18, r16
- 28e:	a5 01       	movw	r20, r10
- 290:	c7 01       	movw	r24, r14
- 292:	b6 01       	movw	r22, r12
- 294:	0e 94 4d 00 	call	0x9a	; 0x9a <_Z22eeprom_read_bytes_partmiPh>
- 298:	98 01       	movw	r18, r16
- 29a:	2a 0d       	add	r18, r10
- 29c:	3b 1d       	adc	r19, r11
- 29e:	ae 01       	movw	r20, r28
- 2a0:	4c 0d       	add	r20, r12
- 2a2:	5d 1d       	adc	r21, r13
- 2a4:	60 e0       	ldi	r22, 0x00	; 0
- 2a6:	70 e0       	ldi	r23, 0x00	; 0
- 2a8:	81 e0       	ldi	r24, 0x01	; 1
- 2aa:	90 e0       	ldi	r25, 0x00	; 0
- 2ac:	0e 94 4d 00 	call	0x9a	; 0x9a <_Z22eeprom_read_bytes_partmiPh>
- 2b0:	06 c0       	rjmp	.+12     	; 0x2be <_Z17eeprom_read_bytesmiPh+0x78>
- 2b2:	98 01       	movw	r18, r16
- 2b4:	ae 01       	movw	r20, r28
- 2b6:	c7 01       	movw	r24, r14
- 2b8:	b6 01       	movw	r22, r12
- 2ba:	0e 94 4d 00 	call	0x9a	; 0x9a <_Z22eeprom_read_bytes_partmiPh>
- 2be:	df 91       	pop	r29
- 2c0:	cf 91       	pop	r28
- 2c2:	1f 91       	pop	r17
- 2c4:	0f 91       	pop	r16
- 2c6:	ff 90       	pop	r15
- 2c8:	ef 90       	pop	r14
- 2ca:	df 90       	pop	r13
- 2cc:	cf 90       	pop	r12
- 2ce:	bf 90       	pop	r11
- 2d0:	af 90       	pop	r10
- 2d2:	08 95       	ret
+00000246 <_Z17eeprom_write_pagemiPh>:
+ 246:	cf 92       	push	r12
+ 248:	df 92       	push	r13
+ 24a:	ef 92       	push	r14
+ 24c:	ff 92       	push	r15
+ 24e:	0f 93       	push	r16
+ 250:	1f 93       	push	r17
+ 252:	6b 01       	movw	r12, r22
+ 254:	7c 01       	movw	r14, r24
+ 256:	62 2f       	mov	r22, r18
+ 258:	73 2f       	mov	r23, r19
+ 25a:	c1 14       	cp	r12, r1
+ 25c:	d1 04       	cpc	r13, r1
+ 25e:	81 e0       	ldi	r24, 0x01	; 1
+ 260:	e8 06       	cpc	r14, r24
+ 262:	f1 04       	cpc	r15, r1
+ 264:	48 f0       	brcs	.+18     	; 0x278 <_Z17eeprom_write_pagemiPh+0x32>
+ 266:	81 e0       	ldi	r24, 0x01	; 1
+ 268:	e8 1a       	sub	r14, r24
+ 26a:	f1 08       	sbc	r15, r1
+ 26c:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__data_start>
+ 270:	88 60       	ori	r24, 0x08	; 8
+ 272:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__data_start>
+ 276:	05 c0       	rjmp	.+10     	; 0x282 <_Z17eeprom_write_pagemiPh+0x3c>
+ 278:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__data_start>
+ 27c:	87 7f       	andi	r24, 0xF7	; 247
+ 27e:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__data_start>
+ 282:	ca 01       	movw	r24, r20
+ 284:	05 2e       	mov	r0, r21
+ 286:	00 0c       	add	r0, r0
+ 288:	aa 0b       	sbc	r26, r26
+ 28a:	bb 0b       	sbc	r27, r27
+ 28c:	8c 0d       	add	r24, r12
+ 28e:	9d 1d       	adc	r25, r13
+ 290:	ae 1d       	adc	r26, r14
+ 292:	bf 1d       	adc	r27, r15
+ 294:	97 01       	movw	r18, r14
+ 296:	86 01       	movw	r16, r12
+ 298:	0f 67       	ori	r16, 0x7F	; 127
+ 29a:	80 17       	cp	r24, r16
+ 29c:	91 07       	cpc	r25, r17
+ 29e:	a2 07       	cpc	r26, r18
+ 2a0:	b3 07       	cpc	r27, r19
+ 2a2:	18 f4       	brcc	.+6      	; 0x2aa <_Z17eeprom_write_pagemiPh+0x64>
+ 2a4:	4c 0d       	add	r20, r12
+ 2a6:	5d 1d       	adc	r21, r13
+ 2a8:	04 c0       	rjmp	.+8      	; 0x2b2 <_Z17eeprom_write_pagemiPh+0x6c>
+ 2aa:	a6 01       	movw	r20, r12
+ 2ac:	4f 67       	ori	r20, 0x7F	; 127
+ 2ae:	4f 5f       	subi	r20, 0xFF	; 255
+ 2b0:	5f 4f       	sbci	r21, 0xFF	; 255
+ 2b2:	30 91 60 00 	lds	r19, 0x0060	; 0x800060 <__data_start>
+ 2b6:	fd 2d       	mov	r31, r13
+ 2b8:	e8 ec       	ldi	r30, 0xC8	; 200
+ 2ba:	94 ea       	ldi	r25, 0xA4	; 164
+ 2bc:	24 e8       	ldi	r18, 0x84	; 132
+ 2be:	03 c0       	rjmp	.+6      	; 0x2c6 <_Z17eeprom_write_pagemiPh+0x80>
+ 2c0:	e1 50       	subi	r30, 0x01	; 1
+ 2c2:	09 f4       	brne	.+2      	; 0x2c6 <_Z17eeprom_write_pagemiPh+0x80>
+ 2c4:	6f c0       	rjmp	.+222    	; 0x3a4 <_Z17eeprom_write_pagemiPh+0x15e>
+ 2c6:	96 bf       	out	0x36, r25	; 54
+ 2c8:	06 b6       	in	r0, 0x36	; 54
+ 2ca:	07 fe       	sbrs	r0, 7
+ 2cc:	fd cf       	rjmp	.-6      	; 0x2c8 <_Z17eeprom_write_pagemiPh+0x82>
+ 2ce:	81 b1       	in	r24, 0x01	; 1
+ 2d0:	88 7f       	andi	r24, 0xF8	; 248
+ 2d2:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <__data_end>
+ 2d6:	80 31       	cpi	r24, 0x10	; 16
+ 2d8:	29 f0       	breq	.+10     	; 0x2e4 <_Z17eeprom_write_pagemiPh+0x9e>
+ 2da:	88 33       	cpi	r24, 0x38	; 56
+ 2dc:	a1 f3       	breq	.-24     	; 0x2c6 <_Z17eeprom_write_pagemiPh+0x80>
+ 2de:	88 30       	cpi	r24, 0x08	; 8
+ 2e0:	09 f0       	breq	.+2      	; 0x2e4 <_Z17eeprom_write_pagemiPh+0x9e>
+ 2e2:	63 c0       	rjmp	.+198    	; 0x3aa <_Z17eeprom_write_pagemiPh+0x164>
+ 2e4:	33 b9       	out	0x03, r19	; 3
+ 2e6:	26 bf       	out	0x36, r18	; 54
+ 2e8:	06 b6       	in	r0, 0x36	; 54
+ 2ea:	07 fe       	sbrs	r0, 7
+ 2ec:	fd cf       	rjmp	.-6      	; 0x2e8 <_Z17eeprom_write_pagemiPh+0xa2>
+ 2ee:	81 b1       	in	r24, 0x01	; 1
+ 2f0:	88 7f       	andi	r24, 0xF8	; 248
+ 2f2:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <__data_end>
+ 2f6:	80 32       	cpi	r24, 0x20	; 32
+ 2f8:	19 f3       	breq	.-58     	; 0x2c0 <_Z17eeprom_write_pagemiPh+0x7a>
+ 2fa:	88 33       	cpi	r24, 0x38	; 56
+ 2fc:	21 f3       	breq	.-56     	; 0x2c6 <_Z17eeprom_write_pagemiPh+0x80>
+ 2fe:	88 31       	cpi	r24, 0x18	; 24
+ 300:	09 f0       	breq	.+2      	; 0x304 <_Z17eeprom_write_pagemiPh+0xbe>
+ 302:	3f c0       	rjmp	.+126    	; 0x382 <_Z17eeprom_write_pagemiPh+0x13c>
+ 304:	f3 b9       	out	0x03, r31	; 3
+ 306:	26 bf       	out	0x36, r18	; 54
+ 308:	06 b6       	in	r0, 0x36	; 54
+ 30a:	07 fe       	sbrs	r0, 7
+ 30c:	fd cf       	rjmp	.-6      	; 0x308 <_Z17eeprom_write_pagemiPh+0xc2>
+ 30e:	81 b1       	in	r24, 0x01	; 1
+ 310:	88 7f       	andi	r24, 0xF8	; 248
+ 312:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <__data_end>
+ 316:	80 33       	cpi	r24, 0x30	; 48
+ 318:	b9 f1       	breq	.+110    	; 0x388 <_Z17eeprom_write_pagemiPh+0x142>
+ 31a:	88 33       	cpi	r24, 0x38	; 56
+ 31c:	a1 f2       	breq	.-88     	; 0x2c6 <_Z17eeprom_write_pagemiPh+0x80>
+ 31e:	88 32       	cpi	r24, 0x28	; 40
+ 320:	19 f0       	breq	.+6      	; 0x328 <_Z17eeprom_write_pagemiPh+0xe2>
+ 322:	8f ef       	ldi	r24, 0xFF	; 255
+ 324:	9f ef       	ldi	r25, 0xFF	; 255
+ 326:	3b c0       	rjmp	.+118    	; 0x39e <_Z17eeprom_write_pagemiPh+0x158>
+ 328:	c3 b8       	out	0x03, r12	; 3
+ 32a:	26 bf       	out	0x36, r18	; 54
+ 32c:	06 b6       	in	r0, 0x36	; 54
+ 32e:	07 fe       	sbrs	r0, 7
+ 330:	fd cf       	rjmp	.-6      	; 0x32c <_Z17eeprom_write_pagemiPh+0xe6>
+ 332:	81 b1       	in	r24, 0x01	; 1
+ 334:	88 7f       	andi	r24, 0xF8	; 248
+ 336:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <__data_end>
+ 33a:	80 33       	cpi	r24, 0x30	; 48
+ 33c:	41 f1       	breq	.+80     	; 0x38e <_Z17eeprom_write_pagemiPh+0x148>
+ 33e:	88 33       	cpi	r24, 0x38	; 56
+ 340:	11 f2       	breq	.-124    	; 0x2c6 <_Z17eeprom_write_pagemiPh+0x80>
+ 342:	88 32       	cpi	r24, 0x28	; 40
+ 344:	19 f0       	breq	.+6      	; 0x34c <_Z17eeprom_write_pagemiPh+0x106>
+ 346:	8f ef       	ldi	r24, 0xFF	; 255
+ 348:	9f ef       	ldi	r25, 0xFF	; 255
+ 34a:	29 c0       	rjmp	.+82     	; 0x39e <_Z17eeprom_write_pagemiPh+0x158>
+ 34c:	4c 19       	sub	r20, r12
+ 34e:	5d 09       	sbc	r21, r13
+ 350:	14 16       	cp	r1, r20
+ 352:	15 06       	cpc	r1, r21
+ 354:	fc f4       	brge	.+62     	; 0x394 <_Z17eeprom_write_pagemiPh+0x14e>
+ 356:	e6 2f       	mov	r30, r22
+ 358:	f7 2f       	mov	r31, r23
+ 35a:	80 e0       	ldi	r24, 0x00	; 0
+ 35c:	90 e0       	ldi	r25, 0x00	; 0
+ 35e:	34 e8       	ldi	r19, 0x84	; 132
+ 360:	21 91       	ld	r18, Z+
+ 362:	23 b9       	out	0x03, r18	; 3
+ 364:	36 bf       	out	0x36, r19	; 54
+ 366:	06 b6       	in	r0, 0x36	; 54
+ 368:	07 fe       	sbrs	r0, 7
+ 36a:	fd cf       	rjmp	.-6      	; 0x366 <_Z17eeprom_write_pagemiPh+0x120>
+ 36c:	21 b1       	in	r18, 0x01	; 1
+ 36e:	28 7f       	andi	r18, 0xF8	; 248
+ 370:	20 93 62 00 	sts	0x0062, r18	; 0x800062 <__data_end>
+ 374:	28 32       	cpi	r18, 0x28	; 40
+ 376:	89 f4       	brne	.+34     	; 0x39a <_Z17eeprom_write_pagemiPh+0x154>
+ 378:	01 96       	adiw	r24, 0x01	; 1
+ 37a:	48 17       	cp	r20, r24
+ 37c:	59 07       	cpc	r21, r25
+ 37e:	81 f7       	brne	.-32     	; 0x360 <_Z17eeprom_write_pagemiPh+0x11a>
+ 380:	0e c0       	rjmp	.+28     	; 0x39e <_Z17eeprom_write_pagemiPh+0x158>
+ 382:	8f ef       	ldi	r24, 0xFF	; 255
+ 384:	9f ef       	ldi	r25, 0xFF	; 255
+ 386:	0b c0       	rjmp	.+22     	; 0x39e <_Z17eeprom_write_pagemiPh+0x158>
+ 388:	80 e0       	ldi	r24, 0x00	; 0
+ 38a:	90 e0       	ldi	r25, 0x00	; 0
+ 38c:	08 c0       	rjmp	.+16     	; 0x39e <_Z17eeprom_write_pagemiPh+0x158>
+ 38e:	80 e0       	ldi	r24, 0x00	; 0
+ 390:	90 e0       	ldi	r25, 0x00	; 0
+ 392:	05 c0       	rjmp	.+10     	; 0x39e <_Z17eeprom_write_pagemiPh+0x158>
+ 394:	80 e0       	ldi	r24, 0x00	; 0
+ 396:	90 e0       	ldi	r25, 0x00	; 0
+ 398:	02 c0       	rjmp	.+4      	; 0x39e <_Z17eeprom_write_pagemiPh+0x158>
+ 39a:	8f ef       	ldi	r24, 0xFF	; 255
+ 39c:	9f ef       	ldi	r25, 0xFF	; 255
+ 39e:	24 e9       	ldi	r18, 0x94	; 148
+ 3a0:	26 bf       	out	0x36, r18	; 54
+ 3a2:	05 c0       	rjmp	.+10     	; 0x3ae <_Z17eeprom_write_pagemiPh+0x168>
+ 3a4:	8f ef       	ldi	r24, 0xFF	; 255
+ 3a6:	9f ef       	ldi	r25, 0xFF	; 255
+ 3a8:	02 c0       	rjmp	.+4      	; 0x3ae <_Z17eeprom_write_pagemiPh+0x168>
+ 3aa:	8f ef       	ldi	r24, 0xFF	; 255
+ 3ac:	9f ef       	ldi	r25, 0xFF	; 255
+ 3ae:	1f 91       	pop	r17
+ 3b0:	0f 91       	pop	r16
+ 3b2:	ff 90       	pop	r15
+ 3b4:	ef 90       	pop	r14
+ 3b6:	df 90       	pop	r13
+ 3b8:	cf 90       	pop	r12
+ 3ba:	08 95       	ret
 
-000002d4 <_Z9UART_initv>:
- 2d4:	10 bc       	out	0x20, r1	; 32
- 2d6:	8f e5       	ldi	r24, 0x5F	; 95
- 2d8:	89 b9       	out	0x09, r24	; 9
- 2da:	88 e1       	ldi	r24, 0x18	; 24
- 2dc:	8a b9       	out	0x0a, r24	; 10
- 2de:	8e e8       	ldi	r24, 0x8E	; 142
- 2e0:	80 bd       	out	0x20, r24	; 32
- 2e2:	08 95       	ret
+000003bc <_Z18eeprom_write_bytesmiPh>:
+ 3bc:	8f 92       	push	r8
+ 3be:	9f 92       	push	r9
+ 3c0:	af 92       	push	r10
+ 3c2:	bf 92       	push	r11
+ 3c4:	ef 92       	push	r14
+ 3c6:	ff 92       	push	r15
+ 3c8:	0f 93       	push	r16
+ 3ca:	1f 93       	push	r17
+ 3cc:	cf 93       	push	r28
+ 3ce:	df 93       	push	r29
+ 3d0:	4b 01       	movw	r8, r22
+ 3d2:	5c 01       	movw	r10, r24
+ 3d4:	ea 01       	movw	r28, r20
+ 3d6:	89 01       	movw	r16, r18
+ 3d8:	e1 2c       	mov	r14, r1
+ 3da:	f1 2c       	mov	r15, r1
+ 3dc:	98 01       	movw	r18, r16
+ 3de:	ae 01       	movw	r20, r28
+ 3e0:	c5 01       	movw	r24, r10
+ 3e2:	b4 01       	movw	r22, r8
+ 3e4:	0e 94 23 01 	call	0x246	; 0x246 <_Z17eeprom_write_pagemiPh>
+ 3e8:	8f 3f       	cpi	r24, 0xFF	; 255
+ 3ea:	2f ef       	ldi	r18, 0xFF	; 255
+ 3ec:	92 07       	cpc	r25, r18
+ 3ee:	a9 f0       	breq	.+42     	; 0x41a <__LOCK_REGION_LENGTH__+0x1a>
+ 3f0:	ac 01       	movw	r20, r24
+ 3f2:	09 2e       	mov	r0, r25
+ 3f4:	00 0c       	add	r0, r0
+ 3f6:	66 0b       	sbc	r22, r22
+ 3f8:	77 0b       	sbc	r23, r23
+ 3fa:	84 0e       	add	r8, r20
+ 3fc:	95 1e       	adc	r9, r21
+ 3fe:	a6 1e       	adc	r10, r22
+ 400:	b7 1e       	adc	r11, r23
+ 402:	c8 1b       	sub	r28, r24
+ 404:	d9 0b       	sbc	r29, r25
+ 406:	08 0f       	add	r16, r24
+ 408:	19 1f       	adc	r17, r25
+ 40a:	e8 0e       	add	r14, r24
+ 40c:	f9 1e       	adc	r15, r25
+ 40e:	1c 16       	cp	r1, r28
+ 410:	1d 06       	cpc	r1, r29
+ 412:	24 f3       	brlt	.-56     	; 0x3dc <_Z18eeprom_write_bytesmiPh+0x20>
+ 414:	8e 2d       	mov	r24, r14
+ 416:	9f 2d       	mov	r25, r15
+ 418:	02 c0       	rjmp	.+4      	; 0x41e <__LOCK_REGION_LENGTH__+0x1e>
+ 41a:	8f ef       	ldi	r24, 0xFF	; 255
+ 41c:	9f ef       	ldi	r25, 0xFF	; 255
+ 41e:	df 91       	pop	r29
+ 420:	cf 91       	pop	r28
+ 422:	1f 91       	pop	r17
+ 424:	0f 91       	pop	r16
+ 426:	ff 90       	pop	r15
+ 428:	ef 90       	pop	r14
+ 42a:	bf 90       	pop	r11
+ 42c:	af 90       	pop	r10
+ 42e:	9f 90       	pop	r9
+ 430:	8f 90       	pop	r8
+ 432:	08 95       	ret
 
-000002e4 <_Z9UART_sendh>:
- 2e4:	5d 9b       	sbis	0x0b, 5	; 11
- 2e6:	fe cf       	rjmp	.-4      	; 0x2e4 <_Z9UART_sendh>
- 2e8:	8c b9       	out	0x0c, r24	; 12
- 2ea:	08 95       	ret
+00000434 <_Z17eeprom_read_bytesmiPh>:
+ 434:	af 92       	push	r10
+ 436:	bf 92       	push	r11
+ 438:	cf 92       	push	r12
+ 43a:	df 92       	push	r13
+ 43c:	ef 92       	push	r14
+ 43e:	ff 92       	push	r15
+ 440:	0f 93       	push	r16
+ 442:	1f 93       	push	r17
+ 444:	cf 93       	push	r28
+ 446:	df 93       	push	r29
+ 448:	6b 01       	movw	r12, r22
+ 44a:	7c 01       	movw	r14, r24
+ 44c:	ea 01       	movw	r28, r20
+ 44e:	89 01       	movw	r16, r18
+ 450:	61 15       	cp	r22, r1
+ 452:	71 05       	cpc	r23, r1
+ 454:	81 40       	sbci	r24, 0x01	; 1
+ 456:	91 05       	cpc	r25, r1
+ 458:	18 f5       	brcc	.+70     	; 0x4a0 <_Z17eeprom_read_bytesmiPh+0x6c>
+ 45a:	ca 01       	movw	r24, r20
+ 45c:	55 0f       	add	r21, r21
+ 45e:	aa 0b       	sbc	r26, r26
+ 460:	bb 0b       	sbc	r27, r27
+ 462:	8c 0d       	add	r24, r12
+ 464:	9d 1d       	adc	r25, r13
+ 466:	ae 1d       	adc	r26, r14
+ 468:	bf 1d       	adc	r27, r15
+ 46a:	01 97       	sbiw	r24, 0x01	; 1
+ 46c:	a1 40       	sbci	r26, 0x01	; 1
+ 46e:	b1 05       	cpc	r27, r1
+ 470:	b8 f0       	brcs	.+46     	; 0x4a0 <_Z17eeprom_read_bytesmiPh+0x6c>
+ 472:	aa 24       	eor	r10, r10
+ 474:	bb 24       	eor	r11, r11
+ 476:	ac 18       	sub	r10, r12
+ 478:	bd 08       	sbc	r11, r13
+ 47a:	98 01       	movw	r18, r16
+ 47c:	a5 01       	movw	r20, r10
+ 47e:	c7 01       	movw	r24, r14
+ 480:	b6 01       	movw	r22, r12
+ 482:	0e 94 4d 00 	call	0x9a	; 0x9a <_Z22eeprom_read_bytes_partmiPh>
+ 486:	98 01       	movw	r18, r16
+ 488:	2a 0d       	add	r18, r10
+ 48a:	3b 1d       	adc	r19, r11
+ 48c:	ae 01       	movw	r20, r28
+ 48e:	4c 0d       	add	r20, r12
+ 490:	5d 1d       	adc	r21, r13
+ 492:	60 e0       	ldi	r22, 0x00	; 0
+ 494:	70 e0       	ldi	r23, 0x00	; 0
+ 496:	81 e0       	ldi	r24, 0x01	; 1
+ 498:	90 e0       	ldi	r25, 0x00	; 0
+ 49a:	0e 94 4d 00 	call	0x9a	; 0x9a <_Z22eeprom_read_bytes_partmiPh>
+ 49e:	06 c0       	rjmp	.+12     	; 0x4ac <_Z17eeprom_read_bytesmiPh+0x78>
+ 4a0:	98 01       	movw	r18, r16
+ 4a2:	ae 01       	movw	r20, r28
+ 4a4:	c7 01       	movw	r24, r14
+ 4a6:	b6 01       	movw	r22, r12
+ 4a8:	0e 94 4d 00 	call	0x9a	; 0x9a <_Z22eeprom_read_bytes_partmiPh>
+ 4ac:	df 91       	pop	r29
+ 4ae:	cf 91       	pop	r28
+ 4b0:	1f 91       	pop	r17
+ 4b2:	0f 91       	pop	r16
+ 4b4:	ff 90       	pop	r15
+ 4b6:	ef 90       	pop	r14
+ 4b8:	df 90       	pop	r13
+ 4ba:	cf 90       	pop	r12
+ 4bc:	bf 90       	pop	r11
+ 4be:	af 90       	pop	r10
+ 4c0:	08 95       	ret
 
-000002ec <_Z12UART_write16t>:
+000004c2 <_Z9UART_initv>:
+ 4c2:	10 bc       	out	0x20, r1	; 32
+ 4c4:	8f e5       	ldi	r24, 0x5F	; 95
+ 4c6:	89 b9       	out	0x09, r24	; 9
+ 4c8:	88 e1       	ldi	r24, 0x18	; 24
+ 4ca:	8a b9       	out	0x0a, r24	; 10
+ 4cc:	8e e8       	ldi	r24, 0x8E	; 142
+ 4ce:	80 bd       	out	0x20, r24	; 32
+ 4d0:	08 95       	ret
+
+000004d2 <_Z9UART_sendh>:
+ 4d2:	5d 9b       	sbis	0x0b, 5	; 11
+ 4d4:	fe cf       	rjmp	.-4      	; 0x4d2 <_Z9UART_sendh>
+ 4d6:	8c b9       	out	0x0c, r24	; 12
+ 4d8:	08 95       	ret
+
+000004da <_Z12UART_write16t>:
 void UART_write16(unsigned short data)
 {
- 2ec:	cf 93       	push	r28
- 2ee:	c8 2f       	mov	r28, r24
+ 4da:	cf 93       	push	r28
+ 4dc:	c8 2f       	mov	r28, r24
 	unsigned char MSdata = ((data>>8) & 0x00FF);  	//filter out MS
 	unsigned char LSdata = (data & 0x00FF);			//filter out LS
 	UART_send(MSdata);
- 2f0:	89 2f       	mov	r24, r25
- 2f2:	0e 94 72 01 	call	0x2e4	; 0x2e4 <_Z9UART_sendh>
+ 4de:	89 2f       	mov	r24, r25
+ 4e0:	0e 94 69 02 	call	0x4d2	; 0x4d2 <_Z9UART_sendh>
 	UART_send(LSdata);
- 2f6:	8c 2f       	mov	r24, r28
- 2f8:	0e 94 72 01 	call	0x2e4	; 0x2e4 <_Z9UART_sendh>
+ 4e4:	8c 2f       	mov	r24, r28
+ 4e6:	0e 94 69 02 	call	0x4d2	; 0x4d2 <_Z9UART_sendh>
 }
- 2fc:	cf 91       	pop	r28
- 2fe:	08 95       	ret
+ 4ea:	cf 91       	pop	r28
+ 4ec:	08 95       	ret
 
-00000300 <main>:
+000004ee <main>:
 int main(void)
 {	
- 300:	cf 93       	push	r28
- 302:	df 93       	push	r29
- 304:	00 d0       	rcall	.+0      	; 0x306 <main+0x6>
- 306:	cd b7       	in	r28, 0x3d	; 61
- 308:	de b7       	in	r29, 0x3e	; 62
+ 4ee:	cf 93       	push	r28
+ 4f0:	df 93       	push	r29
+ 4f2:	00 d0       	rcall	.+0      	; 0x4f4 <main+0x6>
+ 4f4:	00 d0       	rcall	.+0      	; 0x4f6 <main+0x8>
+ 4f6:	cd b7       	in	r28, 0x3d	; 61
+ 4f8:	de b7       	in	r29, 0x3e	; 62
 	ioinit();
- 30a:	0e 94 49 00 	call	0x92	; 0x92 <_Z6ioinitv>
+ 4fa:	0e 94 49 00 	call	0x92	; 0x92 <_Z6ioinitv>
 	UART_init();
- 30e:	0e 94 6a 01 	call	0x2d4	; 0x2d4 <_Z9UART_initv>
+ 4fe:	0e 94 61 02 	call	0x4c2	; 0x4c2 <_Z9UART_initv>
 	uint8_t byte[2], output[2]; 
 	int count=0;
-	byte[0]=0; byte[1]=0;
- 312:	19 82       	std	Y+1, r1	; 0x01
- 314:	1a 82       	std	Y+2, r1	; 0x02
-	TCCR1B|=(1<<CS10);
- 316:	8e b5       	in	r24, 0x2e	; 46
- 318:	81 60       	ori	r24, 0x01	; 1
- 31a:	8e bd       	out	0x2e, r24	; 46
-	//TCNT1=0;
-	eeprom_read_bytes(eeprom_addr, 1 ,  byte);
- 31c:	60 91 60 00 	lds	r22, 0x0060	; 0x800060 <__data_start>
- 320:	70 e0       	ldi	r23, 0x00	; 0
- 322:	80 e0       	ldi	r24, 0x00	; 0
- 324:	90 e0       	ldi	r25, 0x00	; 0
- 326:	9e 01       	movw	r18, r28
- 328:	2f 5f       	subi	r18, 0xFF	; 255
- 32a:	3f 4f       	sbci	r19, 0xFF	; 255
- 32c:	41 e0       	ldi	r20, 0x01	; 1
- 32e:	50 e0       	ldi	r21, 0x00	; 0
- 330:	0e 94 23 01 	call	0x246	; 0x246 <_Z17eeprom_read_bytesmiPh>
-	count = TCNT1;
- 334:	8c b5       	in	r24, 0x2c	; 44
- 336:	9d b5       	in	r25, 0x2d	; 45
-	UART_write16(count);
- 338:	0e 94 76 01 	call	0x2ec	; 0x2ec <_Z12UART_write16t>
- 33c:	ff cf       	rjmp	.-2      	; 0x33c <main+0x3c>
+	byte[0]=28; byte[1]=26;
+ 502:	8c e1       	ldi	r24, 0x1C	; 28
+ 504:	89 83       	std	Y+1, r24	; 0x01
+ 506:	8a e1       	ldi	r24, 0x1A	; 26
+ 508:	8a 83       	std	Y+2, r24	; 0x02
+ 50a:	00 e0       	ldi	r16, 0x00	; 0
+ 50c:	10 e0       	ldi	r17, 0x00	; 0
+for (int i=0;i<5;i++)
+{
+	int check1=0;
+// 	byte[0]=UART_Receive();
+// 	byte[1]=UART_Receive();
+	check1 = eeprom_write_bytes(eeprom_addr+(i*2), 2, byte);
+ 50e:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__data_start>
+ 512:	b8 01       	movw	r22, r16
+ 514:	68 0f       	add	r22, r24
+ 516:	71 1d       	adc	r23, r1
+ 518:	07 2e       	mov	r0, r23
+ 51a:	00 0c       	add	r0, r0
+ 51c:	88 0b       	sbc	r24, r24
+ 51e:	99 0b       	sbc	r25, r25
+ 520:	9e 01       	movw	r18, r28
+ 522:	2f 5f       	subi	r18, 0xFF	; 255
+ 524:	3f 4f       	sbci	r19, 0xFF	; 255
+ 526:	42 e0       	ldi	r20, 0x02	; 2
+ 528:	50 e0       	ldi	r21, 0x00	; 0
+ 52a:	0e 94 de 01 	call	0x3bc	; 0x3bc <_Z18eeprom_write_bytesmiPh>
+ 52e:	0e 5f       	subi	r16, 0xFE	; 254
+ 530:	1f 4f       	sbci	r17, 0xFF	; 255
+// 	TCNT1=0;
+// 	int a = eeprom_read_bytes(eeprom_addr, 1 , byte);
+// 	count = TCNT1;
+// 	UART_write16(count);
+	//byte[0]=0x07; byte[1]=0x11;
+for (int i=0;i<5;i++)
+ 532:	0a 30       	cpi	r16, 0x0A	; 10
+ 534:	11 05       	cpc	r17, r1
+ 536:	59 f7       	brne	.-42     	; 0x50e <main+0x20>
+ 538:	00 e0       	ldi	r16, 0x00	; 0
+ 53a:	10 e0       	ldi	r17, 0x00	; 0
+// 	byte[1]=UART_Receive();
+	check1 = eeprom_write_bytes(eeprom_addr+(i*2), 2, byte);
+}
+for ( int i=0; i<5;i++)
+{
+	output[0]=0; output[1]=0;
+ 53c:	1b 82       	std	Y+3, r1	; 0x03
+ 53e:	1c 82       	std	Y+4, r1	; 0x04
+	int data=0;
+	int check2 = eeprom_read_bytes(eeprom_addr+(i*2),2, output);
+ 540:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__data_start>
+ 544:	b8 01       	movw	r22, r16
+ 546:	68 0f       	add	r22, r24
+ 548:	71 1d       	adc	r23, r1
+ 54a:	07 2e       	mov	r0, r23
+ 54c:	00 0c       	add	r0, r0
+ 54e:	88 0b       	sbc	r24, r24
+ 550:	99 0b       	sbc	r25, r25
+ 552:	9e 01       	movw	r18, r28
+ 554:	2d 5f       	subi	r18, 0xFD	; 253
+ 556:	3f 4f       	sbci	r19, 0xFF	; 255
+ 558:	42 e0       	ldi	r20, 0x02	; 2
+ 55a:	50 e0       	ldi	r21, 0x00	; 0
+ 55c:	0e 94 1a 02 	call	0x434	; 0x434 <_Z17eeprom_read_bytesmiPh>
+	data|=(output[0]<<8);
+	data|=output[1];
+	UART_write16(data);
+ 560:	8b 81       	ldd	r24, Y+3	; 0x03
+ 562:	90 e0       	ldi	r25, 0x00	; 0
+ 564:	98 2f       	mov	r25, r24
+ 566:	88 27       	eor	r24, r24
+ 568:	2c 81       	ldd	r18, Y+4	; 0x04
+ 56a:	82 2b       	or	r24, r18
+ 56c:	0e 94 6d 02 	call	0x4da	; 0x4da <_Z12UART_write16t>
+ 570:	0e 5f       	subi	r16, 0xFE	; 254
+ 572:	1f 4f       	sbci	r17, 0xFF	; 255
+	int check1=0;
+// 	byte[0]=UART_Receive();
+// 	byte[1]=UART_Receive();
+	check1 = eeprom_write_bytes(eeprom_addr+(i*2), 2, byte);
+}
+for ( int i=0; i<5;i++)
+ 574:	0a 30       	cpi	r16, 0x0A	; 10
+ 576:	11 05       	cpc	r17, r1
+ 578:	09 f7       	brne	.-62     	; 0x53c <main+0x4e>
+ 57a:	ff cf       	rjmp	.-2      	; 0x57a <main+0x8c>
 
-0000033e <_exit>:
- 33e:	f8 94       	cli
+0000057c <_exit>:
+ 57c:	f8 94       	cli
 
-00000340 <__stop_program>:
- 340:	ff cf       	rjmp	.-2      	; 0x340 <__stop_program>
+0000057e <__stop_program>:
+ 57e:	ff cf       	rjmp	.-2      	; 0x57e <__stop_program>
