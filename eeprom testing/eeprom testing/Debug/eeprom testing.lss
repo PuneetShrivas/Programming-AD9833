@@ -3,31 +3,31 @@ eeprom testing.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         0000035a  00000000  00000000  00000094  2**1
+  0 .text         0000039a  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000002  00800060  0000035a  000003ee  2**0
+  1 .data         00000002  00800060  0000039a  0000042e  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .bss          00000001  00800062  00800062  000003f0  2**0
+  2 .bss          00000005  00800062  00800062  00000430  2**0
                   ALLOC
-  3 .comment      00000030  00000000  00000000  000003f0  2**0
+  3 .comment      00000030  00000000  00000000  00000430  2**0
                   CONTENTS, READONLY
-  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000420  2**2
+  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000460  2**2
                   CONTENTS, READONLY
-  5 .debug_aranges 00000078  00000000  00000000  0000045c  2**0
+  5 .debug_aranges 00000078  00000000  00000000  0000049c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_info   00000b08  00000000  00000000  000004d4  2**0
+  6 .debug_info   00000b72  00000000  00000000  00000514  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_abbrev 0000073d  00000000  00000000  00000fdc  2**0
+  7 .debug_abbrev 000007c9  00000000  00000000  00001086  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_line   0000062b  00000000  00000000  00001719  2**0
+  8 .debug_line   0000069e  00000000  00000000  0000184f  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_frame  00000190  00000000  00000000  00001d44  2**2
+  9 .debug_frame  000001a4  00000000  00000000  00001ef0  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    00000529  00000000  00000000  00001ed4  2**0
+ 10 .debug_str    0000055b  00000000  00000000  00002094  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    000008d1  00000000  00000000  000023fd  2**0
+ 11 .debug_loc    0000093b  00000000  00000000  000025ef  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000068  00000000  00000000  00002cce  2**0
+ 12 .debug_ranges 00000068  00000000  00000000  00002f2a  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -67,7 +67,7 @@ Disassembly of section .text:
   60:	10 e0       	ldi	r17, 0x00	; 0
   62:	a0 e6       	ldi	r26, 0x60	; 96
   64:	b0 e0       	ldi	r27, 0x00	; 0
-  66:	ea e5       	ldi	r30, 0x5A	; 90
+  66:	ea e9       	ldi	r30, 0x9A	; 154
   68:	f3 e0       	ldi	r31, 0x03	; 3
   6a:	02 c0       	rjmp	.+4      	; 0x70 <__do_copy_data+0x10>
   6c:	05 90       	lpm	r0, Z+
@@ -86,11 +86,11 @@ Disassembly of section .text:
   7e:	1d 92       	st	X+, r1
 
 00000080 <.do_clear_bss_start>:
-  80:	a3 36       	cpi	r26, 0x63	; 99
+  80:	a7 36       	cpi	r26, 0x67	; 103
   82:	b2 07       	cpc	r27, r18
   84:	e1 f7       	brne	.-8      	; 0x7e <.do_clear_bss_loop>
-  86:	0e 94 7a 01 	call	0x2f4	; 0x2f4 <main>
-  8a:	0c 94 ab 01 	jmp	0x356	; 0x356 <_exit>
+  86:	0e 94 76 01 	call	0x2ec	; 0x2ec <main>
+  8a:	0c 94 cb 01 	jmp	0x396	; 0x396 <_exit>
 
 0000008e <__bad_interrupt>:
   8e:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
@@ -397,93 +397,121 @@ Disassembly of section .text:
  2e8:	8c b9       	out	0x0c, r24	; 12
  2ea:	08 95       	ret
 
-000002ec <_Z11USART_Flushv>:
- 2ec:	80 e0       	ldi	r24, 0x00	; 0
- 2ee:	0e 94 72 01 	call	0x2e4	; 0x2e4 <_Z9UART_sendh>
- 2f2:	08 95       	ret
-
-000002f4 <main>:
+000002ec <main>:
 
 int main(void)
 {	
+ 2ec:	ef 92       	push	r14
+ 2ee:	ff 92       	push	r15
+ 2f0:	0f 93       	push	r16
+ 2f2:	1f 93       	push	r17
  2f4:	cf 93       	push	r28
  2f6:	df 93       	push	r29
  2f8:	cd b7       	in	r28, 0x3d	; 61
  2fa:	de b7       	in	r29, 0x3e	; 62
- 2fc:	2a 97       	sbiw	r28, 0x0a	; 10
+ 2fc:	60 97       	sbiw	r28, 0x10	; 16
  2fe:	0f b6       	in	r0, 0x3f	; 63
  300:	f8 94       	cli
  302:	de bf       	out	0x3e, r29	; 62
  304:	0f be       	out	0x3f, r0	; 63
  306:	cd bf       	out	0x3d, r28	; 61
+
 	ioinit();
  308:	0e 94 49 00 	call	0x92	; 0x92 <_Z6ioinitv>
 	UART_init();
  30c:	0e 94 6a 01 	call	0x2d4	; 0x2d4 <_Z9UART_initv>
-// 	TCCR1B|=(1<<CS10);
-// 	TCNT1=0;
-// 	int a = eeprom_read_bytes(eeprom_addr, 1 , byte);
-// 	count = TCNT1;
-// 	UART_write16(count);
-UART_send(0);
- 310:	80 e0       	ldi	r24, 0x00	; 0
- 312:	0e 94 72 01 	call	0x2e4	; 0x2e4 <_Z9UART_sendh>
-// for (int i=0;i<225;i++)
-// {	
-// 	byte[0]=i;
-// 	eeprom_write_bytes(eeprom_addr+i,2,byte);
+// 	byte[0]=UART_Receive();
+// 	eeprom_write_bytes(write_addr, 1, byte);
+// // 	eeprom_read_bytes(write_addr, 1, data);
+// // 	UART_send(data[0]);
 // }
-for (int i=0;i<225;i++)
- 316:	00 e0       	ldi	r16, 0x00	; 0
- 318:	10 e0       	ldi	r17, 0x00	; 0
-{	
-	
-	eeprom_read_bytes(eeprom_addr+i,2,data);
- 31a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__data_start>
- 31e:	b8 01       	movw	r22, r16
- 320:	68 0f       	add	r22, r24
- 322:	71 1d       	adc	r23, r1
- 324:	07 2e       	mov	r0, r23
- 326:	00 0c       	add	r0, r0
- 328:	88 0b       	sbc	r24, r24
- 32a:	99 0b       	sbc	r25, r25
- 32c:	9e 01       	movw	r18, r28
- 32e:	2f 5f       	subi	r18, 0xFF	; 255
- 330:	3f 4f       	sbci	r19, 0xFF	; 255
- 332:	42 e0       	ldi	r20, 0x02	; 2
- 334:	50 e0       	ldi	r21, 0x00	; 0
- 336:	0e 94 23 01 	call	0x246	; 0x246 <_Z17eeprom_read_bytesmiPh>
-	//_delay_us(50);
-		
-	//_delay_us(50);
-	UART_send(data[0]);
- 33a:	89 81       	ldd	r24, Y+1	; 0x01
- 33c:	0e 94 72 01 	call	0x2e4	; 0x2e4 <_Z9UART_sendh>
-	USART_Flush();
- 340:	0e 94 76 01 	call	0x2ec	; 0x2ec <_Z11USART_Flushv>
-// for (int i=0;i<225;i++)
-// {	
-// 	byte[0]=i;
-// 	eeprom_write_bytes(eeprom_addr+i,2,byte);
+	write_addr+=81904;
+ 310:	80 91 63 00 	lds	r24, 0x0063	; 0x800063 <write_addr>
+ 314:	90 91 64 00 	lds	r25, 0x0064	; 0x800064 <write_addr+0x1>
+ 318:	a0 91 65 00 	lds	r26, 0x0065	; 0x800065 <write_addr+0x2>
+ 31c:	b0 91 66 00 	lds	r27, 0x0066	; 0x800066 <write_addr+0x3>
+ 320:	bc 01       	movw	r22, r24
+ 322:	cd 01       	movw	r24, r26
+ 324:	60 51       	subi	r22, 0x10	; 16
+ 326:	70 4c       	sbci	r23, 0xC0	; 192
+ 328:	8e 4f       	sbci	r24, 0xFE	; 254
+ 32a:	9f 4f       	sbci	r25, 0xFF	; 255
+ 32c:	60 93 63 00 	sts	0x0063, r22	; 0x800063 <write_addr>
+ 330:	70 93 64 00 	sts	0x0064, r23	; 0x800064 <write_addr+0x1>
+ 334:	80 93 65 00 	sts	0x0065, r24	; 0x800065 <write_addr+0x2>
+ 338:	90 93 66 00 	sts	0x0066, r25	; 0x800066 <write_addr+0x3>
+	eeprom_read_bytes(write_addr,16,data);
+ 33c:	9e 01       	movw	r18, r28
+ 33e:	2f 5f       	subi	r18, 0xFF	; 255
+ 340:	3f 4f       	sbci	r19, 0xFF	; 255
+ 342:	40 e1       	ldi	r20, 0x10	; 16
+ 344:	50 e0       	ldi	r21, 0x00	; 0
+ 346:	0e 94 23 01 	call	0x246	; 0x246 <_Z17eeprom_read_bytesmiPh>
+ 34a:	8e 01       	movw	r16, r28
+ 34c:	0f 5f       	subi	r16, 0xFF	; 255
+ 34e:	1f 4f       	sbci	r17, 0xFF	; 255
+ 350:	7e 01       	movw	r14, r28
+ 352:	81 e1       	ldi	r24, 0x11	; 17
+ 354:	e8 0e       	add	r14, r24
+ 356:	f1 1c       	adc	r15, r1
+	for (int i=0;i<16;i++)
+	{
+		UART_send(data[i]);
+ 358:	f8 01       	movw	r30, r16
+ 35a:	81 91       	ld	r24, Z+
+ 35c:	8f 01       	movw	r16, r30
+ 35e:	0e 94 72 01 	call	0x2e4	; 0x2e4 <_Z9UART_sendh>
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 362:	86 e6       	ldi	r24, 0x66	; 102
+ 364:	9e e0       	ldi	r25, 0x0E	; 14
+ 366:	01 97       	sbiw	r24, 0x01	; 1
+ 368:	f1 f7       	brne	.-4      	; 0x366 <main+0x7a>
+ 36a:	00 00       	nop
+// // 	eeprom_read_bytes(write_addr, 1, data);
+// // 	UART_send(data[0]);
 // }
-for (int i=0;i<225;i++)
- 344:	0f 5f       	subi	r16, 0xFF	; 255
- 346:	1f 4f       	sbci	r17, 0xFF	; 255
- 348:	01 3e       	cpi	r16, 0xE1	; 225
- 34a:	11 05       	cpc	r17, r1
- 34c:	31 f7       	brne	.-52     	; 0x31a <main+0x26>
-// 	eeprom_read_bytes(eeprom_addr+(0),10,data);
-// 	for (int i=0;i<10;i++)
-// 	{
-// 		UART_send(data[i]);
-// 	}
+	write_addr+=81904;
+	eeprom_read_bytes(write_addr,16,data);
+	for (int i=0;i<16;i++)
+ 36c:	0e 15       	cp	r16, r14
+ 36e:	1f 05       	cpc	r17, r15
+ 370:	99 f7       	brne	.-26     	; 0x358 <main+0x6c>
+	{
+		UART_send(data[i]);
+		_delay_ms(1);
+	}
 UART_send(1);
- 34e:	81 e0       	ldi	r24, 0x01	; 1
- 350:	0e 94 72 01 	call	0x2e4	; 0x2e4 <_Z9UART_sendh>
- 354:	ff cf       	rjmp	.-2      	; 0x354 <main+0x60>
+ 372:	81 e0       	ldi	r24, 0x01	; 1
+ 374:	0e 94 72 01 	call	0x2e4	; 0x2e4 <_Z9UART_sendh>
+//     while (1) 
+//     {
+// 		PORTA^=(1<<PINA0);
+// 		_delay_ms(5000);
+//     }
+}
+ 378:	80 e0       	ldi	r24, 0x00	; 0
+ 37a:	90 e0       	ldi	r25, 0x00	; 0
+ 37c:	60 96       	adiw	r28, 0x10	; 16
+ 37e:	0f b6       	in	r0, 0x3f	; 63
+ 380:	f8 94       	cli
+ 382:	de bf       	out	0x3e, r29	; 62
+ 384:	0f be       	out	0x3f, r0	; 63
+ 386:	cd bf       	out	0x3d, r28	; 61
+ 388:	df 91       	pop	r29
+ 38a:	cf 91       	pop	r28
+ 38c:	1f 91       	pop	r17
+ 38e:	0f 91       	pop	r16
+ 390:	ff 90       	pop	r15
+ 392:	ef 90       	pop	r14
+ 394:	08 95       	ret
 
-00000356 <_exit>:
- 356:	f8 94       	cli
+00000396 <_exit>:
+ 396:	f8 94       	cli
 
-00000358 <__stop_program>:
- 358:	ff cf       	rjmp	.-2      	; 0x358 <__stop_program>
+00000398 <__stop_program>:
+ 398:	ff cf       	rjmp	.-2      	; 0x398 <__stop_program>

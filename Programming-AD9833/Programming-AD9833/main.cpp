@@ -408,137 +408,141 @@ int main(void)
 	// 	}
 	//////////////////////////////////////////////////////////////////////////
 	
-
-	SPI_write16(0x100);								//Reset AD9833 
-
-	//VIS Code
-	{//leader tone
-	_delay_ms(500);
-	Set_AD9833(1900,0);
-	_delay_ms(300);
-	//break
-	Set_AD9833(1200,0);
-	_delay_ms(10);
-	//leader
-	Set_AD9833(1900,0);
-	_delay_ms(300);
-	//VIS start bit
-	Set_AD9833(1200,0);
-	_delay_ms(29);	_delay_us(839);
-	//PD90 VIS code = 99d = 0b1100011
-	//bit 0=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 1=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 2=0
-	Set_AD9833(1300,0);
-	_delay_ms(29);  _delay_us(839);
-	//bit 3=0
-	Set_AD9833(1300,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 4=0
-	Set_AD9833(1300,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 5=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 6=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//Parity bit
-	Set_AD9833(1300,0);
-	_delay_ms(29);	_delay_us(839);
-	//stop bit
-	Set_AD9833(1200,0);
-	_delay_ms(29);	_delay_us(839); 			
-	}
-
-	//image data
-	while(i<=128)
-	{
-	//Sync Pulse
-	Set_AD9833(1200,0);
-	_delay_ms(19);	_delay_us(840);		//Time in protocol minus programming time of Set_AD9833()
-	
-	//Porch
-	Set_AD9833(1500,0);
-	_delay_ms(1);	_delay_us(919);		//Time in protocol minus programming time of Set_AD9833()
-
-	//Color transmission	
-	cont=1;								// variable for maintaining count of pixels
-	global_frequency=freqY1;			//initialization for first pixel
-	sei();				
-	TCCR1B=0;		
-	TCCR1B|=(1<<CS10)|(1<<WGM12);
-	TIMSK|=(1<<OCIE1A);
-	OCR1A=TEMP;
-	TCNT1=TEMP-1; 
-	while(cont<=1280);					// wait loop for interrupts  to complete
-	cli();
-	TIMSK&=~(1<<OCIE1A);
-	TCCR1B=0x00;
-	PORTA=0;
-	//i++;
-/*	UART_write16(global_frequency);*/
-	//added delay for straightening image
-// 	_delay_ms(1);
-	//_delay_us(100);
-
-	//color be delay 
-	{// 	
-
-
-// // 		//Y Scan odd line
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(1757.2549);
-// // 			_delay_us(10479.409722); //532*20-160.590278
-// // 			Set_AD9833(1954.90196);
-// // 			 _delay_us(10479.409722);
-// // 		}
+    while (1)
+    {
+	    PORTA^=(1<<PINA0);
+	    _delay_ms(5000);
+    }
+// 	SPI_write16(0x100);								//Reset AD9833 
+// 
+// 	//VIS Code
+// 	{//leader tone
+// 	_delay_ms(500);
+// 	Set_AD9833(1900,0);
+// 	_delay_ms(300);
+// 	//break
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(10);
+// 	//leader
+// 	Set_AD9833(1900,0);
+// 	_delay_ms(300);
+// 	//VIS start bit
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//PD90 VIS code = 99d = 0b1100011
+// 	//bit 0=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 1=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 2=0
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);  _delay_us(839);
+// 	//bit 3=0
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 4=0
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 5=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 6=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//Parity bit
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//stop bit
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(29);	_delay_us(839); 			
+// 	}
+// 
+// 	//image data
+// 	while(i<=128)
+// 	{
+// 	//Sync Pulse
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(19);	_delay_us(840);		//Time in protocol minus programming time of Set_AD9833()
+// 	
+// 	//Porch
+// 	Set_AD9833(1500,0);
+// 	_delay_ms(1);	_delay_us(919);		//Time in protocol minus programming time of Set_AD9833()
+// 
+// 	//Color transmission	
+// 	cont=1;								// variable for maintaining count of pixels
+// 	global_frequency=freqY1;			//initialization for first pixel
+// 	sei();				
+// 	TCCR1B=0;		
+// 	TCCR1B|=(1<<CS10)|(1<<WGM12);
+// 	TIMSK|=(1<<OCIE1A);
+// 	OCR1A=TEMP;
+// 	TCNT1=TEMP-1; 
+// 	while(cont<=1280);					// wait loop for interrupts  to complete
+// 	cli();
+// 	TIMSK&=~(1<<OCIE1A);
+// 	TCCR1B=0x00;
+// 	PORTA=0;
+// 	//i++;
+// /*	UART_write16(global_frequency);*/
+// 	//added delay for straightening image
+// // 	_delay_ms(1);
+// 	//_delay_us(100);
+// 
+// 	//color be delay 
+// 	{// 	
+// 
+// 
+// // // 		//Y Scan odd line
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(1757.2549);
+// // // 			_delay_us(10479.409722); //532*20-160.590278
+// // // 			Set_AD9833(1954.90196);
+// // // 			 _delay_us(10479.409722);
+// // // 		}
+// // // 		//R-Y Scan average
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(2252.94118);
+// // // 			 _delay_us(10479.409722);
+// // // 			Set_AD9833(1606.66667);
+// // // 			 _delay_us(10479.409722);
+// // // 		}
+// // // 		//B-Y Scan average
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(1782.35294); _delay_us(10479.409722);
+// // // 			Set_AD9833(1669.41177); _delay_us(10479.409722);
+// // // 		}
+// // // 		//Y Scan even line
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
+// // // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
+// // // 		}
+// 		//Y Scan odd line
+// // 		Set_AD9833(freqY1,0); 
+// // 		_delay_us(170079.41);
+// // 
 // // 		//R-Y Scan average
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(2252.94118);
-// // 			 _delay_us(10479.409722);
-// // 			Set_AD9833(1606.66667);
-// // 			 _delay_us(10479.409722);
-// // 		}
+// // 		Set_AD9833(freqRY1,0); 
+// // 		_delay_us(170079.41);
+// // 
 // // 		//B-Y Scan average
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(1782.35294); _delay_us(10479.409722);
-// // 			Set_AD9833(1669.41177); _delay_us(10479.409722);
-// // 		}
+// // 		Set_AD9833(freqBY1,0); 
+// // 		_delay_us(170079.41);
+// // 
 // // 		//Y Scan even line
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
-// // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
-// // 		}
-		//Y Scan odd line
-// 		Set_AD9833(freqY1,0); 
-// 		_delay_us(170079.41);
+// // 		Set_AD9833(freqY1,0);
+// // 		_delay_us(170079.41);
 // 
-// 		//R-Y Scan average
-// 		Set_AD9833(freqRY1,0); 
-// 		_delay_us(170079.41);
+// }
 // 
-// 		//B-Y Scan average
-// 		Set_AD9833(freqBY1,0); 
-// 		_delay_us(170079.41);
+// 	}
 // 
-// 		//Y Scan even line
-// 		Set_AD9833(freqY1,0);
-// 		_delay_us(170079.41);
-
-}
-
-	}
-
-Set_AD9833(0x00,0);
+// Set_AD9833(0x00,0);
 }
 
 ISR(TIMER1_COMPA_vect)

@@ -5,10 +5,7 @@
  * Author : Puneet Shrivas
  */ 
 
-#include <avr/io.h>
-#include <util/twi.h>
-#include <util/delay.h>
-#include <stdlib.h>
+
 #define I2C_BAUD 100000UL 
 #define F_CPU 14745600
 #define Prescaler 1
@@ -19,10 +16,19 @@
 //#define _BV(bit) (1<<(bit))
 #define MAX_ITER	200
 #define PAGE_SIZE 128
-
+#include <avr/io.h>			//definitions have to be before inclusions
+#include <util/twi.h>
+#include <util/delay.h>
+#include <stdlib.h>
+uint32_t write_addr=0;
 uint8_t twst;
 static uint8_t eeprom_addr = 0b10100110;	/* E2 E1 E0 = 0 0 0 */
 
+void led()
+{
+	DDRA=(1<<PINA0);
+	PORTA=(1<<PINA0);
+}
 void ioinit(void)
 {
 
@@ -360,6 +366,8 @@ int eeprom_write_bytes(uint32_t eeaddr, int len, uint8_t *buf)
 
 void error(void)
 {
+	led();
+	
   exit(0);
 }
 
@@ -383,7 +391,7 @@ void UART_init(void)
 	UCSRC = (1<<URSEL)|(1<<USBS)|(3<<UCSZ0);							// Set frame format: 8data, 2stop bit
 }
 
-void UART_send(unsigned char data)
+void UART_send(uint8_t data)
 {
 	while(!(UCSRA & (1<<UDRE)));										//wait for buffer to be emptied
 	UDR=data;
@@ -396,11 +404,7 @@ unsigned char UART_Receive( void )
 	/* Get and return received data from buffer */
 	return UDR;
 }
-void USART_Flush( void )
-{
-	unsigned char dummy=NULL;
-	UART_send(dummy);
-}
+
 void UART_write16(unsigned short data)
 {
 	unsigned char MSdata = ((data>>8) & 0x00FF);  	//filter out MS
@@ -411,9 +415,10 @@ void UART_write16(unsigned short data)
 
 int main(void)
 {	
+
 	ioinit();
 	UART_init();
-	uint8_t byte[2], output[2], data[10]; 
+	uint8_t byte[2], output[2], data[16]; 
 	
 	int count=0;
 // 	byte[0]=17; byte[1]=13;
@@ -422,38 +427,36 @@ int main(void)
 // 	int a = eeprom_read_bytes(eeprom_addr, 1 , byte);
 // 	count = TCNT1;
 // 	UART_write16(count);
-UART_send(0);
+
 // for (int i=0;i<225;i++)
 // {	
 // 	byte[0]=i;
 // 	eeprom_write_bytes(eeprom_addr+i,2,byte);
 // }
-for (int i=0;i<225;i++)
-{	
-	
-	eeprom_read_bytes(eeprom_addr+i,2,data);
-	//_delay_us(50);
-		
-	//_delay_us(50);
-	UART_send(data[0]);
-	USART_Flush();
-//	_delay_ms(1);
-}
-// for (int i=0;i<10240;i++)
-// {
-// 	eeprom_read_bytes(eeprom_addr+(i*2), 2, byte);
-// /*	int check1=0;*/
-// /*	byte[0]=UART_Receive();*/
-// 	UART_send(byte[0]);
-// /*	byte[1]=UART_Receive();*/
-// 	UART_send(byte[1]);
-// /*	eeprom_write_bytes(eeprom_addr+(i*2), 2, byte);*/
+// for (int i=12;i<=226;i++)
+// {	
+// 	
+// 	eeprom_read_bytes(eeprom_addr+i,1,data);
+// 	UART_send(data[0]);
+// 	//USART_Flush();
+// 	_delay_ms(100);
+// 	UART_send(i);
+// 	_delay_ms(100);
 // }
-// 	eeprom_read_bytes(eeprom_addr+(0),10,data);
-// 	for (int i=0;i<10;i++)
-// 	{
-// 		UART_send(data[i]);
-// 	}
+// for (write_addr=0;write_addr<81920;write_addr++)
+// {
+// 	byte[0]=UART_Receive();
+// 	eeprom_write_bytes(write_addr, 1, byte);
+// // 	eeprom_read_bytes(write_addr, 1, data);
+// // 	UART_send(data[0]);
+// }
+	write_addr+=81904;
+	eeprom_read_bytes(write_addr,16,data);
+	for (int i=0;i<16;i++)
+	{
+		UART_send(data[i]);
+		_delay_ms(1);
+	}
 UART_send(1);
 // for ( int i=0; i<5;i++)
 // {
@@ -470,9 +473,10 @@ UART_send(1);
 // 	 UART_send(byte[1]);
 //     //UART_send('a');
 	/* Replace with your application code */
-    while (1) 
-    {
-
-    }
+//     while (1) 
+//     {
+// 		PORTA^=(1<<PINA0);
+// 		_delay_ms(5000);
+//     }
 }
 
