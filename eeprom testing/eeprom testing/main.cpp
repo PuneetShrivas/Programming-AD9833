@@ -7,8 +7,9 @@
 
 #include <avr/io.h>
 #include <util/twi.h>
+#include <util/delay.h>
 #include <stdlib.h>
-#define I2C_BAUD 500000UL 
+#define I2C_BAUD 100000UL 
 #define F_CPU 14745600
 #define Prescaler 1
 #define BAUDRATE 9600			  //Baud rate for UART
@@ -395,6 +396,11 @@ unsigned char UART_Receive( void )
 	/* Get and return received data from buffer */
 	return UDR;
 }
+void USART_Flush( void )
+{
+	unsigned char dummy=NULL;
+	UART_send(dummy);
+}
 void UART_write16(unsigned short data)
 {
 	unsigned char MSdata = ((data>>8) & 0x00FF);  	//filter out MS
@@ -402,35 +408,62 @@ void UART_write16(unsigned short data)
 	UART_send(MSdata);
 	UART_send(LSdata);
 }
+
 int main(void)
 {	
 	ioinit();
 	UART_init();
-	uint8_t byte[2], output[2]; 
+	uint8_t byte[2], output[2], data[10]; 
+	
 	int count=0;
-	byte[0]=28; byte[1]=26;
+// 	byte[0]=17; byte[1]=13;
 // 	TCCR1B|=(1<<CS10);
 // 	TCNT1=0;
 // 	int a = eeprom_read_bytes(eeprom_addr, 1 , byte);
 // 	count = TCNT1;
 // 	UART_write16(count);
-	//byte[0]=0x07; byte[1]=0x11;
-for (int i=0;i<5;i++)
-{
-	int check1=0;
-// 	byte[0]=UART_Receive();
-// 	byte[1]=UART_Receive();
-	check1 = eeprom_write_bytes(eeprom_addr+(i*2), 2, byte);
+UART_send(0);
+// for (int i=0;i<225;i++)
+// {	
+// 	byte[0]=i;
+// 	eeprom_write_bytes(eeprom_addr+i,2,byte);
+// }
+for (int i=0;i<225;i++)
+{	
+	
+	eeprom_read_bytes(eeprom_addr+i,2,data);
+	//_delay_us(50);
+		
+	//_delay_us(50);
+	UART_send(data[0]);
+	USART_Flush();
+//	_delay_ms(1);
 }
-for ( int i=0; i<5;i++)
-{
-	output[0]=0; output[1]=0;
-	int data=0;
-	int check2 = eeprom_read_bytes(eeprom_addr+(i*2),2, output);
-	data|=(output[0]<<8);
-	data|=output[1];
-	UART_write16(data);
-}
+// for (int i=0;i<10240;i++)
+// {
+// 	eeprom_read_bytes(eeprom_addr+(i*2), 2, byte);
+// /*	int check1=0;*/
+// /*	byte[0]=UART_Receive();*/
+// 	UART_send(byte[0]);
+// /*	byte[1]=UART_Receive();*/
+// 	UART_send(byte[1]);
+// /*	eeprom_write_bytes(eeprom_addr+(i*2), 2, byte);*/
+// }
+// 	eeprom_read_bytes(eeprom_addr+(0),10,data);
+// 	for (int i=0;i<10;i++)
+// 	{
+// 		UART_send(data[i]);
+// 	}
+UART_send(1);
+// for ( int i=0; i<5;i++)
+// {
+// 	output[0]=0; output[1]=0;
+// 	int data=0;
+// 	int check2 = eeprom_read_bytes(eeprom_addr+(i*2),2, output);
+// 	data|=(output[0]<<8);
+// 	data|=output[1];
+// 	UART_write16(data);
+// }
 //  	UART_send(output[0]);
 //  	UART_send(output[1]);
 // 	 UART_send(byte[0]);

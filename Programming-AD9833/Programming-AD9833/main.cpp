@@ -15,7 +15,7 @@
 #define TIMER1_PRESCALER 1
 #define TIMER0_PRESCALER 0
 #define PI 3.14159
-#define I2C_BAUD 100000UL 
+#define I2C_BAUD 500000UL 
 #define Prescaler 1
 #define MAX_ADDR 131072
 #define HALF_ADDR 65536
@@ -40,7 +40,7 @@ volatile int global_frequency=0;										//Volatile global variables for use in
 volatile float prev_freq = 0;
 volatile int cont=0;
 int cont_copy=0;
-int i=1;
+volatile int i=1;
 volatile unsigned int prev_phase=0;
 volatile unsigned int next_phase=0;
 volatile int contprev = 0;
@@ -304,7 +304,7 @@ void SPI_write16 (unsigned short data)    			//send a 16bit word and use f sync
 
 void Set_AD9833(float frequency, unsigned int phase)
 {
-	long FreqReg = (frequency*pow(2,28))/(float)Fmclk;	  //Calculate frequency to be sent to AD9833
+	long FreqReg = (((float)frequency)*pow(2,28))/(float)Fmclk;	  //Calculate frequency to be sent to AD9833
 	int MSB = (int)((FreqReg &  0xFFFC000) >> 14);		   //Extract first 14 bits of FreqReg and place them at last 14 bits of MSB
 	int LSB = (int)((FreqReg & 0x3FFF));				  //Extract last 14 bits of FreqReg and place them at last 14 bits of MSB	
 	MSB|=0x4000;										  //Set D14,D15 = (1,0) for using FREQ0 registers, MSB has all 16 bits set
@@ -456,7 +456,7 @@ int main(void)
 	}
 
 	//image data
-	for (int i=1;i<=128;i++)
+	while(i<=128)
 	{
 	//Sync Pulse
 	Set_AD9833(1200,0);
@@ -480,7 +480,8 @@ int main(void)
 	TIMSK&=~(1<<OCIE1A);
 	TCCR1B=0x00;
 	PORTA=0;
-	
+	//i++;
+/*	UART_write16(global_frequency);*/
 	//added delay for straightening image
 // 	_delay_ms(1);
 	//_delay_us(100);
@@ -542,23 +543,24 @@ Set_AD9833(0x00,0);
 
 ISR(TIMER1_COMPA_vect)
 {
-	if(compare==0)
-	{
-		Set_AD9833(global_frequency,next_phase);
-		notSet=0;
-	}
-	else
-	{
-		notSet++;
-	}
-//	Set_AD9833(global_frequency,next_phase);	          
+// 	compare=0;
+// 	if(compare==0)
+// 	{
+// 		Set_AD9833(global_frequency,next_phase);
+// 		notSet=0;
+// 	}
+// 	else
+// 	{
+// 		notSet++;
+// 	}
+	Set_AD9833(global_frequency,next_phase);	          
 	prev_phase=next_phase;
 	prev_freq = global_frequency;	
 // 	if(cont==319) global_frequency = freqRY1;
 // 	else if(cont==639) global_frequency = freqBY1;
 // 	else if(cont==959) global_frequency = freqY1;
 	global_frequency=0;
-	eeprom_read_bytes(eeprom_addr+((i-1)*1280)+((cont-1)*2),2,byte);
+	eeprom_read_bytes((eeprom_addr+((i-1)*2560)+((cont-1)*2)),2,byte);
 	global_frequency|=(byte[0]<<8);
 	global_frequency|=byte[1];
 // 	if(((cont-2)%20)==0) 
@@ -579,11 +581,12 @@ ISR(TIMER1_COMPA_vect)
 // 			else if(t<64) global_frequency = freqY2;
 // 		}
 // 	}
-	next_phase = getphase(prev_phase,prev_freq,(532*notSet));		//calculation of phase to be added in new wave
+	next_phase = getphase(prev_phase,prev_freq,(532));		//calculation of phase to be added in new wave
+	//next_phase=0;
 	cont++;
-	if (global_frequency==prev_freq) compare=1;
-	else compare =0;
-	if (cont==1280) compare=0;
+// 	if (global_frequency==prev_freq) compare=1;
+// 	else compare =0;
+    if (cont==1280) i++;
 }
 	
  EMPTY_INTERRUPT(SPI_STC_vect) //to prevent reset on Empty SPI interrupt 
