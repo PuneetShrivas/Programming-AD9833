@@ -3,29 +3,29 @@ Comp_Atmega_Uart_test.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000000e0  00000000  00000000  00000054  2**1
+  0 .text         0000009c  00000000  00000000  00000054  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000000  00800060  00800060  00000134  2**0
+  1 .data         00000000  00800060  00800060  000000f0  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .comment      00000030  00000000  00000000  00000134  2**0
+  2 .comment      00000030  00000000  00000000  000000f0  2**0
                   CONTENTS, READONLY
-  3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000164  2**2
+  3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000120  2**2
                   CONTENTS, READONLY
-  4 .debug_aranges 00000048  00000000  00000000  000001a0  2**0
+  4 .debug_aranges 00000040  00000000  00000000  0000015c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_info   000006d4  00000000  00000000  000001e8  2**0
+  5 .debug_info   00000653  00000000  00000000  0000019c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_abbrev 000005dc  00000000  00000000  000008bc  2**0
+  6 .debug_abbrev 000005af  00000000  00000000  000007ef  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_line   00000248  00000000  00000000  00000e98  2**0
+  7 .debug_line   000001f0  00000000  00000000  00000d9e  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_frame  0000007c  00000000  00000000  000010e0  2**2
+  8 .debug_frame  0000006c  00000000  00000000  00000f90  2**2
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_str    000003e5  00000000  00000000  0000115c  2**0
+  9 .debug_str    000003c2  00000000  00000000  00000ffc  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_loc    0000013f  00000000  00000000  00001541  2**0
+ 10 .debug_loc    00000079  00000000  00000000  000013be  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_ranges 00000038  00000000  00000000  00001680  2**0
+ 11 .debug_ranges 00000030  00000000  00000000  00001437  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -60,18 +60,18 @@ Disassembly of section .text:
   5a:	d8 e0       	ldi	r29, 0x08	; 8
   5c:	de bf       	out	0x3e, r29	; 62
   5e:	cd bf       	out	0x3d, r28	; 61
-  60:	0e 94 50 00 	call	0xa0	; 0xa0 <main>
-  64:	0c 94 6e 00 	jmp	0xdc	; 0xdc <_exit>
+  60:	0e 94 42 00 	call	0x84	; 0x84 <main>
+  64:	0c 94 4c 00 	jmp	0x98	; 0x98 <_exit>
 
 00000068 <__bad_interrupt>:
   68:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
 
 0000006c <_Z9UART_initv>:
-	data|=(MSdata<<8);
-	data|=LSdata;
-	PORTA|=(1<<PINA1);
-	return data;
-/*	return UDR;*/
+	/* Wait for data to be received */
+	while ( !(UCSRA & (1<<RXC)) )
+	;
+	/* Get and return received data from buffer */
+	return UDR;
 }
   6c:	10 bc       	out	0x20, r1	; 32
   6e:	87 e0       	ldi	r24, 0x07	; 7
@@ -88,69 +88,27 @@ Disassembly of section .text:
   80:	8c b9       	out	0x0c, r24	; 12
   82:	08 95       	ret
 
-00000084 <_Z12UART_write16t>:
-  84:	cf 93       	push	r28
-  86:	c8 2f       	mov	r28, r24
-  88:	89 2f       	mov	r24, r25
-  8a:	0e 94 3e 00 	call	0x7c	; 0x7c <_Z9UART_sendh>
-  8e:	8c 2f       	mov	r24, r28
-  90:	0e 94 3e 00 	call	0x7c	; 0x7c <_Z9UART_sendh>
-  94:	cf 91       	pop	r28
-  96:	08 95       	ret
+00000084 <main>:
 
-00000098 <_Z12UART_Receivev>:
-  98:	5f 9b       	sbis	0x0b, 7	; 11
-  9a:	fe cf       	rjmp	.-4      	; 0x98 <_Z12UART_Receivev>
-  9c:	8c b1       	in	r24, 0x0c	; 12
-  9e:	08 95       	ret
-
-000000a0 <main>:
 int main(void)
 {	int datacount=0;
 	DDRA = (1<<PINA0)|(1<<PINA1)|(1<<PINA2);
-  a0:	87 e0       	ldi	r24, 0x07	; 7
-  a2:	8a bb       	out	0x1a, r24	; 26
+  84:	87 e0       	ldi	r24, 0x07	; 7
+  86:	8a bb       	out	0x1a, r24	; 26
 	UART_init();
-  a4:	0e 94 36 00 	call	0x6c	; 0x6c <_Z9UART_initv>
-  a8:	00 e0       	ldi	r16, 0x00	; 0
-  aa:	10 e5       	ldi	r17, 0x50	; 80
-	unsigned int data=0;
-	//UART_write16(0x0000);
-	while (1) 
-    {
-		data=0;
-		byte1 =UART_Receive();
-  ac:	0e 94 4c 00 	call	0x98	; 0x98 <_Z12UART_Receivev>
-  b0:	c8 2f       	mov	r28, r24
-		byte2 =UART_Receive();
-  b2:	0e 94 4c 00 	call	0x98	; 0x98 <_Z12UART_Receivev>
-		data|=(byte1<<8);
-		data|=byte2;
-  b6:	2c 2f       	mov	r18, r28
-  b8:	30 e0       	ldi	r19, 0x00	; 0
-  ba:	32 2f       	mov	r19, r18
-  bc:	22 27       	eor	r18, r18
-  be:	a9 01       	movw	r20, r18
-  c0:	48 2b       	or	r20, r24
-  c2:	ca 01       	movw	r24, r20
-		if(data==0x07A1) PORTA|=(1<PINA0);
-  c4:	81 3a       	cpi	r24, 0xA1	; 161
-  c6:	57 e0       	ldi	r21, 0x07	; 7
-  c8:	95 07       	cpc	r25, r21
-  ca:	11 f4       	brne	.+4      	; 0xd0 <main+0x30>
-  cc:	2b b3       	in	r18, 0x1b	; 27
-  ce:	2b bb       	out	0x1b, r18	; 27
-		UART_write16(data);
-  d0:	0e 94 42 00 	call	0x84	; 0x84 <_Z12UART_write16t>
-  d4:	01 50       	subi	r16, 0x01	; 1
-  d6:	11 09       	sbc	r17, r1
-		datacount++;
-		if(datacount==20480) while(1) ;
-  d8:	49 f7       	brne	.-46     	; 0xac <main+0xc>
-  da:	ff cf       	rjmp	.-2      	; 0xda <main+0x3a>
+  88:	0e 94 36 00 	call	0x6c	; 0x6c <_Z9UART_initv>
+	UART_send('a');
+  8c:	81 e6       	ldi	r24, 0x61	; 97
+  8e:	0e 94 3e 00 	call	0x7c	; 0x7c <_Z9UART_sendh>
+	//UART_write16(0x00
+	
+}
+  92:	80 e0       	ldi	r24, 0x00	; 0
+  94:	90 e0       	ldi	r25, 0x00	; 0
+  96:	08 95       	ret
 
-000000dc <_exit>:
-  dc:	f8 94       	cli
+00000098 <_exit>:
+  98:	f8 94       	cli
 
-000000de <__stop_program>:
-  de:	ff cf       	rjmp	.-2      	; 0xde <__stop_program>
+0000009a <__stop_program>:
+  9a:	ff cf       	rjmp	.-2      	; 0x9a <__stop_program>

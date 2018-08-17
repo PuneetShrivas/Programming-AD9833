@@ -9,11 +9,11 @@ char freq=0;
 void setup() {
 size(320, 256);
 img=loadImage("test.png");
-Output=createWriter("transmitnew.hex");
+Output=createWriter("colorssinglefull.txt");
 loadPixels();
 background(img);
  stroke(#00FF01);
-for(int lineSet=97;lineSet<=128;lineSet++)
+for(int lineSet=1;lineSet<=128;lineSet++)
 {
   for(int pixelCount=0;pixelCount<320;pixelCount++)
   {
@@ -60,11 +60,13 @@ float g2= green(img.pixels[loc2]);
 float b2= blue(img.pixels[loc2]);
 switch(type)
 {
-  case 1 : float Y1 = 16.0 + (.003906 * ((65.738 * r1) + (129.057 * g1) + (25.064 *b1)));   freq+=  1500 + (Y1 * 3.1372549); float Y2 = 16.0 + (.003906 * ((65.738 * r2) + (129.057 * g2) + (25.064 *b2)));   freq+=  1500 + (Y2 * 3.1372549); break;
-  case 2 : float RY1 = 128.0 + (.003906 * ((112.439 * r1) + (-94.154 * g1) + (-18.285 * b1)));  freq+=   1500 + (RY1 * 3.1372549); float RY2 = 128.0 + (.003906 * ((112.439 * r2) + (-94.154 * g2) + (-18.285 * b2)));  freq+=   1500 + (RY2 * 3.1372549); break;
-  case 3 : float BY1 = 128.0 + (.003906 * ((-37.945 * r1) + (-74.494 * g1) + (112.439 * b1)));   freq+=  1500 + (BY1 * 3.1372549); float BY2 = 128.0 + (.003906 * ((-37.945 * r2) + (-74.494 * g2) + (112.439 * b2)));   freq+=  1500 + (BY2 * 3.1372549); break;
+  case 1 : float Y1 = 16.0 + (.003906 * ((65.738 * r1) + (129.057 * g1) + (25.064 *b1)));   freq+=  Y1; float Y2 = 16.0 + (.003906 * ((65.738 * r2) + (129.057 * g2) + (25.064 *b2)));   freq+=  Y2; break;
+  case 2 : float RY1 = 128.0 + (.003906 * ((112.439 * r1) + (-94.154 * g1) + (-18.285 * b1)));  freq+=   RY1; float RY2 = 128.0 + (.003906 * ((112.439 * r2) + (-94.154 * g2) + (-18.285 * b2)));  freq+= RY2; break;
+  case 3 : float BY1 = 128.0 + (.003906 * ((-37.945 * r1) + (-74.494 * g1) + (112.439 * b1)));   freq+=  BY1; float BY2 = 128.0 + (.003906 * ((-37.945 * r2) + (-74.494 * g2) + (112.439 * b2)));   freq+=  BY2; break;
 }
+
 freq/=2;
+
 return (char)freq;
 }
 
@@ -75,8 +77,8 @@ void Outprint(char data)
 {
  //Output.print(data);
  byte out=0;
- out = (byte)((data>>8) & 0x00FF);
- Output.print(hex(out));
+// out = (byte)((data>>8) & 0x00FF);
+// Output.print(hex(out));
  out = (byte)(data & 0x00FF);
  Output.print(hex(out));
 }

@@ -6,24 +6,33 @@
  */ 
 
 
-#define I2C_BAUD 100000UL 
+#define I2C_BAUD 400000UL 
 #define F_CPU 14745600
 #define Prescaler 1
 #define BAUDRATE 9600			  //Baud rate for UART
 #define BAUD_PRESCALLER (((F_CPU/(BAUDRATE * 16UL))) - 1) //Predefined formula from data sheet
 #define MAX_ADDR 131072
 #define HALF_ADDR 65536
-//#define _BV(bit) (1<<(bit))
+#define TIMER1_PRESCALER 1
+int TEMP = ((((F_CPU)/(TIMER1_PRESCALER*1000000))*560.5)-1);			//Counter Cycles for required time560.5
+#define _BV(bit) (1<<(bit))
 #define MAX_ITER	200
 #define PAGE_SIZE 128
 #include <avr/io.h>			//definitions have to be before inclusions
 #include <util/twi.h>
 #include <util/delay.h>
 #include <stdlib.h>
+#include <avr/interrupt.h>
 uint32_t write_addr=0;
 uint8_t twst;
+volatile uint32_t cont=0;
+/*volatile*/ uint8_t byte[200];
 static uint8_t eeprom_addr = 0b10100110;	/* E2 E1 E0 = 0 0 0 */
-
+void UART_send(uint8_t data)
+{
+	while(!(UCSRA & (1<<UDRE)));										//wait for buffer to be emptied
+	UDR=data;
+}
 void led()
 {
 	DDRA=(1<<PINA0);
@@ -46,7 +55,7 @@ void ioinit(void)
 }
 
 
-int eeprom_read_bytes_part(uint32_t eeaddr, int len, uint8_t *buf)
+int eeprom_read_bytes_part(uint32_t eeaddr, int len,/*volatile */uint8_t *buf)
 {
   uint8_t sla, twcr, n = 0;
   int rv = 0;
@@ -78,12 +87,12 @@ int eeprom_read_bytes_part(uint32_t eeaddr, int len, uint8_t *buf)
   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
   switch ((twst = TW_STATUS))
     {
-    case TW_REP_START:		/* OK, but should not happen */
+    case TW_REP_START:	 	/* OK, but should not happen */
     case TW_START:
       break;
 
     case TW_MT_ARB_LOST:	/* Note [9] */
-      goto begin;
+      { goto begin;}
 
     default:
       return -1;		/* error: not in start condition */
@@ -105,7 +114,7 @@ int eeprom_read_bytes_part(uint32_t eeaddr, int len, uint8_t *buf)
       goto restart;
 
     case TW_MT_ARB_LOST:	/* re-arbitrate */
-      goto begin;
+     {  goto begin;}
 
     default:
       goto error;		/* must send stop condition */
@@ -119,10 +128,10 @@ int eeprom_read_bytes_part(uint32_t eeaddr, int len, uint8_t *buf)
     case TW_MT_DATA_ACK:
       break;
 
-    case TW_MT_DATA_NACK:
+    case TW_MT_DATA_NACK: 
 
     case TW_MT_ARB_LOST:
-      goto begin;
+      { goto begin;}
 
     default:
       goto error;		/* must send stop condition */
@@ -137,10 +146,10 @@ int eeprom_read_bytes_part(uint32_t eeaddr, int len, uint8_t *buf)
       break;
 
     case TW_MT_DATA_NACK:
-      goto quit;
+     {  goto quit;}
 
     case TW_MT_ARB_LOST:
-      goto begin;
+      { goto begin;}
 
     default:
       goto error;		/* must send stop condition */
@@ -159,7 +168,7 @@ int eeprom_read_bytes_part(uint32_t eeaddr, int len, uint8_t *buf)
       break;
 
     case TW_MT_ARB_LOST:
-      goto begin;
+      { goto begin;}
 
     default:
       goto error;
@@ -178,7 +187,7 @@ int eeprom_read_bytes_part(uint32_t eeaddr, int len, uint8_t *buf)
       goto quit;
 
     case TW_MR_ARB_LOST:
-      goto begin;
+     {  goto begin;}
 
     default:
       goto error;
@@ -211,6 +220,7 @@ int eeprom_read_bytes_part(uint32_t eeaddr, int len, uint8_t *buf)
   return rv;
 
  error:
+   
   rv = -1;
   goto quit;
 }
@@ -366,12 +376,11 @@ int eeprom_write_bytes(uint32_t eeaddr, int len, uint8_t *buf)
 
 void error(void)
 {
-	led();
-	
+	led();	
   exit(0);
 }
 
-int eeprom_read_bytes(uint32_t eeaddr, int len, uint8_t *buf)
+int eeprom_read_bytes(uint32_t eeaddr, int len, /*volatile*/ uint8_t *buf)
 {
 	if((eeaddr < HALF_ADDR) && ((eeaddr + len) > HALF_ADDR))
 	{
@@ -391,11 +400,7 @@ void UART_init(void)
 	UCSRC = (1<<URSEL)|(1<<USBS)|(3<<UCSZ0);							// Set frame format: 8data, 2stop bit
 }
 
-void UART_send(uint8_t data)
-{
-	while(!(UCSRA & (1<<UDRE)));										//wait for buffer to be emptied
-	UDR=data;
-}
+
 unsigned char UART_Receive( void )
 {
 	/* Wait for data to be received */
@@ -410,6 +415,7 @@ void UART_write16(unsigned short data)
 	unsigned char MSdata = ((data>>8) & 0x00FF);  	//filter out MS
 	unsigned char LSdata = (data & 0x00FF);			//filter out LS
 	UART_send(MSdata);
+	_delay_us(500);
 	UART_send(LSdata);
 }
 
@@ -418,16 +424,17 @@ int main(void)
 
 	ioinit();
 	UART_init();
-	uint8_t byte[2], output[2], data[16]; 
-	
+	uint8_t  output[2], data[200]; 
+	//UART_send(6);
 	int count=0;
 // 	byte[0]=17; byte[1]=13;
 // 	TCCR1B|=(1<<CS10);
 // 	TCNT1=0;
-// 	int a = eeprom_read_bytes(eeprom_addr, 1 , byte);
+// 	eeprom_read_bytes(write_addr, 2 , data);
 // 	count = TCNT1;
 // 	UART_write16(count);
-
+// 	UART_send(data[0]);
+	//UART_send(data[1]);
 // for (int i=0;i<225;i++)
 // {	
 // 	byte[0]=i;
@@ -443,28 +450,36 @@ int main(void)
 // 	UART_send(i);
 // 	_delay_ms(100);
 // }
-// for (write_addr=0;write_addr<81920;write_addr++)
-// {
-// 	byte[0]=UART_Receive();
-// 	eeprom_write_bytes(write_addr, 1, byte);
-// // 	eeprom_read_bytes(write_addr, 1, data);
-// // 	UART_send(data[0]);
-// }
-	write_addr+=81904;
-	eeprom_read_bytes(write_addr,16,data);
-	for (int i=0;i<16;i++)
-	{
-		UART_send(data[i]);
-		_delay_ms(1);
-	}
+UART_send(0);
+for (write_addr=0;write_addr<81920;write_addr++)
+{
+	byte[0]=UART_Receive();
+	eeprom_write_bytes(write_addr, 1, byte);
+	eeprom_read_bytes(write_addr,1,data);
+// 	eeprom_read_bytes(write_addr, 1, data);
+	UART_send(data[0]);
+}
 UART_send(1);
+	//write_addr+=0;
+	
+	
+// 	for (uint32_t i=0;i<200;i++)
+// 	{	
+// 		eeprom_read_bytes(write_addr+(2*i),2,data);
+// 		UART_send(data[0]);
+// 		_delay_ms(300);
+// 		UART_send(data[1]);
+// 		_delay_ms(300);
+// /*		_delay_ms(1);*/
+// 	}
+// 	UART_send(01);
 // for ( int i=0; i<5;i++)
 // {
 // 	output[0]=0; output[1]=0;
 // 	int data=0;
 // 	int check2 = eeprom_read_bytes(eeprom_addr+(i*2),2, output);
-// 	data|=(output[0]<<8);
-// 	data|=output[1];
+// 	data|=(output[);
+// 	data|=output[0]<<81];
 // 	UART_write16(data);
 // }
 //  	UART_send(output[0]);
@@ -478,5 +493,22 @@ UART_send(1);
 // 		PORTA^=(1<<PINA0);
 // 		_delay_ms(5000);
 //     }
+// 	sei();
+// 	TCCR1B=0;
+// 	TCCR1B|=(1<<CS10)|(1<<WGM12);
+// 	TIMSK|=(1<<OCIE1A);
+// 	OCR1A=TEMP;
+// 	TCNT1=TEMP-1;
+// 	while(cont<=100);					// wait loop for interrupts  to complete
+// 	cli();
+// 	TIMSK&=~(1<<OCIE1A);
+// 	TCCR1B=0x00;
 }
 
+// ISR(TIMER1_COMPA_vect)
+// {
+// 	byte[0]=0; byte[1]=0;
+// 	eeprom_read_bytes(write_addr+cont,1,byte);
+// 	cont++;
+// 	UART_send(byte[0]);
+// }

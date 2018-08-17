@@ -44,19 +44,8 @@ int main(void)
 {	int datacount=0;
 	DDRA = (1<<PINA0)|(1<<PINA1)|(1<<PINA2);
 	UART_init();
-	unsigned char byte1=0,byte2=0;
-	unsigned int data=0;
-	//UART_write16(0x0000);
-	while (1) 
-    {
-		data=0;
-		byte1 =UART_Receive();
-		byte2 =UART_Receive();
-		data|=(byte1<<8);
-		data|=byte2;
-		UART_write16(data);
-		datacount++;
-		if(datacount==20480) while(1) ;
-    }
+	UART_send('a');
+	//UART_write16(0x00
+	
 }
 
