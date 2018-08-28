@@ -255,9 +255,9 @@ int eeprom_read_bytes(uint32_t eeaddr, int len, /*volatile*/ uint8_t *buf)
 
 void SPI_init(void)
 {
-	DDRB|=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);								//sets SCK, MOSI,SS and PINB0 as output (F sync at Pinb0)
-	PORTB|=(1<<PINB0)|(1<<PINB4);										//F sync High, SS is set high
-	SPCR=(1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<SPIE)|(1<<SPI2X);				//Enable SPI, set master, pre scaler = 2, SPI Mode:2
+	DDRB|=(1<<PINB7)|(1<<PINB5)|(1<<PINB0);								//sets SCK, MOSI and PINB0 as output (F sync at Pinb0)
+	PORTB|=(1<<PINB0)|(1<<PINB4);										//Fsync High, SS is set high
+	SPCR=(1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<SPIE)|(1<<SPI2X);				//Enable SPI, set master, prescaler = 2, SPI Mode:2
 }
 
 void UART_init(void)
@@ -357,13 +357,13 @@ void pinHigh(int time) //milliseconds (3,5,7)
 	PORTB&=~(1<<PINB1);
 	switch (time)
 	{
-	case L1 : _delay_ms(35);
+		case L1 : _delay_ms(35);
 		break;
-	case L3 : _delay_ms(35*3);
+		case L3 : _delay_ms(35*3);
 		break;
-	case L7 : _delay_ms(35*7);
+		case L7 : _delay_ms(35*7);
 		break;
-	default : break;	
+		default : break;
 	}
 }
 void pinLow(int time) //milliseconds (3,5,7)
@@ -382,7 +382,6 @@ void pinLow(int time) //milliseconds (3,5,7)
 }
 int main(void)
 {
-	
 	UART_init();
 	SPI_init();
 	DDRA=(1<<PINA0)|(1<<PINA1)|(1<<PINA2);			//output pins for LEDs	
@@ -393,293 +392,294 @@ int main(void)
 	PORTB|=(1<<PINB1);
 	//Beacon Section 
 	_delay_ms(10);
+	SPI_write16(0x100);
 	Set_AD9833(2000,0);
-for(int p=1;p<=1;p++)
-{	
-	//Send A
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L3);
-	
-	//Space between letter
-	pinLow(L3);
-	
-	//Send D
-	pinHigh(L3);
-	pinLow(L1);
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L1);
-	
-	//Space between letter
-	pinLow(L3);
-	
-	//send V
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L3);
-	
-	//Space between letter
-	pinLow(L3);
-	
-	//send I
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L1);
-
-	
-	//Space between letter
-	pinLow(L3);
-	
-	//send T
-	pinHigh(L3);
-	
-	//Space between letter
-	pinLow(L3);
-	
-	//send I
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L1);
-
-	
-	//Space between letter
-	pinLow(L3);
-	
-	//send Y
-	pinHigh(L3);
-	pinLow(L1);
-	pinHigh(L1);
-	pinLow(L1);	
-	pinHigh(L3);
-	pinLow(L1);
-	pinHigh(L3);
-
-	
-	//Space between words 
-	pinLow(L7);
-	
-	//send I
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L1);
-	
-	//Space between letter
-	pinLow(L3);
-		
-	//send I
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L1);
-	
-	//Space between letter
-	pinLow(L3);
-	
-	//send T
-	pinHigh(L3);	
-
-	//Space between letter
-	pinLow(L3);
-	
-	//send b
-	pinHigh(L3);
-	pinLow(L1);
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L1);
-	pinLow(L1);
-	pinHigh(L1);
-	
-	//Space between words
-	pinLow(L7);	
-	//End Beacon
-}
-	PORTB&=~(1<<PINB1);
-	_delay_ms(4000);
-	//test timers
-	
-// 	//////////////////////////////////////////////////////////////////////////						
-// 	// 	TCNT0=0;																													
-// 	// 	next_phase = getphase(prev_phase,global_frequency,532);
-// 	// 	//add frequency retrieval function here
-// 	// 	Set_AD9833(global_frequency,next_phase);
-// 	// 	prev_phase=next_phase;													
-// 	// 	cont=TCNT0;					
-// 	// 	PORTA=0;
-// 	// 	UART_write16(cont);										
-// 	// 	//160.590278				
-// 	// 	//325.520833 us with phase correction									
-// 	// 	TCCR1B|=(1<<CS10);
-// 	// 	for(int i=1;i<=10;i++)
-// 	// 	{
-// 	// 		TCNT1=0;
-// 	// 		//next_phase=getphase(prev_phase,2000,100000);
-// 	// 		Set_AD9833(2000,next_phase);
-// 	// 		cont=TCNT1 ;
-// 	// 		UART_write16(cont);
-// 	// 	}
-// 	// 		
-// 	// 	for(int i=1;i<5;i++)
-// 	// 	{
-// 	// 		j=i;
-// 	// 	cont=0;
-// 	// 	contnext=0;
-// 	// 	contprev=0;
-// 	// 	TCNT0=0;
-// 	// 	sei();
-// 	// 	TCCR1B|=(1<<CS10);
-// 	// 	TIMSK|=(1<<OCIE1A);
-// 	// 	TCNT1=0;
-// 	// 	OCR1A=TEMP;
-// 	// 	//TCNT1=65534;
-// 	// 	do
-// 	// 	{
-// 	// 		ATOMIC_BLOCK(ATOMIC_FORCEON)
-// 	// 		{
-// 	// 			cont_copy=cont;
-// 	// 		}
-// 	// 	} while (cont_copy<2);
-// 	// 	cli();
-// 	// 	TIMSK&=~(1<<OCR1A);
-// 	// 	TCCR1B=0x00;
-// 	// 	UART_send(contprev);
-// 	// 	UART_send(contnext);
-// 	// 	UART_send(j);
-// 	// // 	UART_send(contprev);
-// 	// // 	UART_send(contnext);
-// 	// 	}
-// 	//////////////////////////////////////////////////////////////////////////
+// for(int p=1;p<=1;p++)
+// {	
+// 	//Send A
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L3);
 // 	
-//    
-	SPI_write16(0x100);								//Reset AD9833 
-
-	//VIS Code
-	{//leader tone
-	_delay_ms(500);
-	Set_AD9833(1900,0);
-	_delay_ms(300);
-	//break
-	Set_AD9833(1200,0);
-	_delay_ms(10);
-	//leader
-	Set_AD9833(1900,0);
-	_delay_ms(300);
-	//VIS start bit
-	Set_AD9833(1200,0);
-	_delay_ms(29);	_delay_us(839);
-	//PD90 VIS code = 99d = 0b1100011
-	//bit 0=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 1=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 2=0
-	Set_AD9833(1300,0);
-	_delay_ms(29);  _delay_us(839);
-	//bit 3=0
-	Set_AD9833(1300,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 4=0
-	Set_AD9833(1300,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 5=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//bit 6=1
-	Set_AD9833(1100,0);
-	_delay_ms(29);	_delay_us(839);
-	//Parity bit
-	Set_AD9833(1300,0);
-	_delay_ms(29);	_delay_us(839);
-	//stop bit
-	Set_AD9833(1200,0);
-	_delay_ms(29);	_delay_us(839); 			
-	}
-	global_frequency=freqY1;			//initialization for first pixel
-	//write_addr+=6;
-	//image data
-	for(i=1;i<=128;i++)
-	{
-	//Sync Pulse
-	Set_AD9833(1200,0);
-	_delay_ms(19);	_delay_us(840);		//Time in protocol minus programming time of Set_AD9833()
-	
-	//Porch
-	Set_AD9833(1500,0);
-	_delay_ms(1);	_delay_us(919);		//Time in protocol minus programming time of Set_AD9833()
-
-	//Color transmission	
-	cont=1;								// variable for maintaining count of pixels
-	
-	sei();				
-	TCCR1B=0;		
-	TCCR1B|=(1<<CS10)|(1<<WGM12);
-	TIMSK|=(1<<OCIE1A);
-	OCR1A=TEMP;
-	TCNT1=TEMP-1; 
-	while(cont<=1280);					// wait loop for interrupts  to complete
-	cli();
-	TIMSK&=~(1<<OCIE1A);
-	TCCR1B=0x00;
-	PORTA=0;
-
-	//color be delay 
-	{// 	
-
-
-// // 		//Y Scan odd line
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(1757.2549);
-// // 			_delay_us(10479.409722); //532*20-160.590278
-// // 			Set_AD9833(1954.90196);
-// // 			 _delay_us(10479.409722);
-// // 		}
+// 	//Space between letter
+// 	pinLow(L3);
+// 	
+// 	//Send D
+// 	pinHigh(L3);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	
+// 	//Space between letter
+// 	pinLow(L3);
+// 	
+// 	//send V
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L3);
+// 	
+// 	//Space between letter
+// 	pinLow(L3);
+// 	
+// 	//send I
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 
+// 	
+// 	//Space between letter
+// 	pinLow(L3);
+// 	
+// 	//send T
+// 	pinHigh(L3);
+// 	
+// 	//Space between letter
+// 	pinLow(L3);
+// 	
+// 	//send I
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 
+// 	
+// 	//Space between letter
+// 	pinLow(L3);
+// 	
+// 	//send Y
+// 	pinHigh(L3);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	pinLow(L1);	
+// 	pinHigh(L3);
+// 	pinLow(L1);
+// 	pinHigh(L3);
+// 
+// 	
+// 	//Space between words 
+// 	pinLow(L7);
+// 	
+// 	//send I
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	
+// 	//Space between letter
+// 	pinLow(L3);
+// 		
+// 	//send I
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	
+// 	//Space between letter
+// 	pinLow(L3);
+// 	
+// 	//send T
+// 	pinHigh(L3);	
+// 
+// 	//Space between letter
+// 	pinLow(L3);
+// 	
+// 	//send b
+// 	pinHigh(L3);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	pinLow(L1);
+// 	pinHigh(L1);
+// 	
+// 	//Space between words
+// 	pinLow(L7);	
+// 	//End Beacon
+// }
+// 	PORTB&=~(1<<PINB1);
+// 	_delay_ms(4000);
+// 	//test timers
+// 	
+// // 	//////////////////////////////////////////////////////////////////////////						
+// // 	// 	TCNT0=0;																													
+// // 	// 	next_phase = getphase(prev_phase,global_frequency,532);
+// // 	// 	//add frequency retrieval function here
+// // 	// 	Set_AD9833(global_frequency,next_phase);
+// // 	// 	prev_phase=next_phase;													
+// // 	// 	cont=TCNT0;					
+// // 	// 	PORTA=0;
+// // 	// 	UART_write16(cont);										
+// // 	// 	//160.590278				
+// // 	// 	//325.520833 us with phase correction									
+// // 	// 	TCCR1B|=(1<<CS10);
+// // 	// 	for(int i=1;i<=10;i++)
+// // 	// 	{
+// // 	// 		TCNT1=0;
+// // 	// 		//next_phase=getphase(prev_phase,2000,100000);
+// // 	// 		Set_AD9833(2000,next_phase);
+// // 	// 		cont=TCNT1 ;
+// // 	// 		UART_write16(cont);
+// // 	// 	}
+// // 	// 		
+// // 	// 	for(int i=1;i<5;i++)
+// // 	// 	{
+// // 	// 		j=i;
+// // 	// 	cont=0;
+// // 	// 	contnext=0;
+// // 	// 	contprev=0;
+// // 	// 	TCNT0=0;
+// // 	// 	sei();
+// // 	// 	TCCR1B|=(1<<CS10);
+// // 	// 	TIMSK|=(1<<OCIE1A);
+// // 	// 	TCNT1=0;
+// // 	// 	OCR1A=TEMP;
+// // 	// 	//TCNT1=65534;
+// // 	// 	do
+// // 	// 	{
+// // 	// 		ATOMIC_BLOCK(ATOMIC_FORCEON)
+// // 	// 		{
+// // 	// 			cont_copy=cont;
+// // 	// 		}
+// // 	// 	} while (cont_copy<2);
+// // 	// 	cli();
+// // 	// 	TIMSK&=~(1<<OCR1A);
+// // 	// 	TCCR1B=0x00;
+// // 	// 	UART_send(contprev);
+// // 	// 	UART_send(contnext);
+// // 	// 	UART_send(j);
+// // 	// // 	UART_send(contprev);
+// // 	// // 	UART_send(contnext);
+// // 	// 	}
+// // 	//////////////////////////////////////////////////////////////////////////
+// // 	
+// //    
+// 	SPI_write16(0x100);								//Reset AD9833 
+// 
+// 	//VIS Code
+// 	{//leader tone
+// 	_delay_ms(500);
+// 	Set_AD9833(1900,0);
+// 	_delay_ms(300);
+// 	//break
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(10);
+// 	//leader
+// 	Set_AD9833(1900,0);
+// 	_delay_ms(300);
+// 	//VIS start bit
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//PD90 VIS code = 99d = 0b1100011
+// 	//bit 0=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 1=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 2=0
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);  _delay_us(839);
+// 	//bit 3=0
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 4=0
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 5=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//bit 6=1
+// 	Set_AD9833(1100,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//Parity bit
+// 	Set_AD9833(1300,0);
+// 	_delay_ms(29);	_delay_us(839);
+// 	//stop bit
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(29);	_delay_us(839); 			
+// 	}
+// 	global_frequency=freqY1;			//initialization for first pixel
+// 	//write_addr+=6;
+// 	//image data
+// 	for(i=1;i<=128;i++)
+// 	{
+// 	//Sync Pulse
+// 	Set_AD9833(1200,0);
+// 	_delay_ms(19);	_delay_us(840);		//Time in protocol minus programming time of Set_AD9833()
+// 	
+// 	//Porch
+// 	Set_AD9833(1500,0);
+// 	_delay_ms(1);	_delay_us(919);		//Time in protocol minus programming time of Set_AD9833()
+// 
+// 	//Color transmission	
+// 	cont=1;								// variable for maintaining count of pixels
+// 	
+// 	sei();				
+// 	TCCR1B=0;		
+// 	TCCR1B|=(1<<CS10)|(1<<WGM12);
+// 	TIMSK|=(1<<OCIE1A);
+// 	OCR1A=TEMP;
+// 	TCNT1=TEMP-1; 
+// 	while(cont<=1280);					// wait loop for interrupts  to complete
+// 	cli();
+// 	TIMSK&=~(1<<OCIE1A);
+// 	TCCR1B=0x00;
+// 	PORTA=0;
+// 
+// 	//color be delay 
+// 	{// 	
+// 
+// 
+// // // 		//Y Scan odd line
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(1757.2549);
+// // // 			_delay_us(10479.409722); //532*20-160.590278
+// // // 			Set_AD9833(1954.90196);
+// // // 			 _delay_us(10479.409722);
+// // // 		}
+// // // 		//R-Y Scan average
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(2252.94118);
+// // // 			 _delay_us(10479.409722);
+// // // 			Set_AD9833(1606.66667);
+// // // 			 _delay_us(10479.409722);
+// // // 		}
+// // // 		//B-Y Scan average
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(1782.35294); _delay_us(10479.409722);
+// // // 			Set_AD9833(1669.41177); _delay_us(10479.409722);
+// // // 		}
+// // // 		//Y Scan even line
+// // // 		for (int j=1;j<=8;j++)
+// // // 		{
+// // // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
+// // // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
+// // // 		}
+// 		//Y Scan odd line
+// // 		Set_AD9833(freqY1,0); 
+// // 		_delay_us(170079.41);
+// // 
 // // 		//R-Y Scan average
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(2252.94118);
-// // 			 _delay_us(10479.409722);
-// // 			Set_AD9833(1606.66667);
-// // 			 _delay_us(10479.409722);
-// // 		}
+// // 		Set_AD9833(freqRY1,0); 
+// // 		_delay_us(170079.41);
+// // 
 // // 		//B-Y Scan average
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(1782.35294); _delay_us(10479.409722);
-// // 			Set_AD9833(1669.41177); _delay_us(10479.409722);
-// // 		}
+// // 		Set_AD9833(freqBY1,0); 
+// // 		_delay_us(170079.41);
+// // 
 // // 		//Y Scan even line
-// // 		for (int j=1;j<=8;j++)
-// // 		{
-// // 			Set_AD9833(1757.2549); _delay_us(10479.409722);
-// // 			Set_AD9833(1954.90196); _delay_us(10479.409722);
-// // 		}
-		//Y Scan odd line
-// 		Set_AD9833(freqY1,0); 
-// 		_delay_us(170079.41);
-// 
-// 		//R-Y Scan average
-// 		Set_AD9833(freqRY1,0); 
-// 		_delay_us(170079.41);
-// 
-// 		//B-Y Scan average
-// 		Set_AD9833(freqBY1,0); 
-// 		_delay_us(170079.41);
-// 
-// 		//Y Scan even line
-// 		Set_AD9833(freqY1,0);
-// 		_delay_us(170079.41);
+// // 		Set_AD9833(freqY1,0);
+// // 		_delay_us(170079.41);
 
-}
-
- }
-	
+// }
+// 
+//  }
+// 	
 }
 
 ISR(TIMER1_COMPA_vect)
